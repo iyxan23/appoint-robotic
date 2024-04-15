@@ -1,3 +1,4 @@
+import 'package:appoint/pages/check_in.dart';
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatelessWidget {
@@ -27,7 +28,14 @@ class LoginPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 16.0),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const CheckInPage(),
+                    ),
+                  );
+                },
                 child: const Text('Login'),
               ),
             ),
@@ -37,4 +45,3 @@ class LoginPage extends StatelessWidget {
     );
   }
 }
-
