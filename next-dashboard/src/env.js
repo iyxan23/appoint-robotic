@@ -7,10 +7,12 @@ export const env = createEnv({
    * isn't built with invalid env vars.
    */
   server: {
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.string(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+    IRON_SESSION_PASSWORD: z.string(),
+    SESSION_MAX_AGE: z.coerce.number().optional(),
   },
 
   /**
@@ -30,6 +32,8 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
+    IRON_SESSION_PASSWORD: process.env.IRON_SESSION_PASSWORD,
+    SESSION_MAX_AGE: process.env.SESSION_MAX_AGE,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
