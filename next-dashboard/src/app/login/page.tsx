@@ -1,6 +1,3 @@
-import { Label } from "@radix-ui/react-dropdown-menu";
-import { EyeIcon } from "lucide-react";
-import { Button } from "~/components/ui/button";
 import {
   Card,
   CardContent,
@@ -8,7 +5,6 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Input } from "~/components/ui/input";
 import LoginContent from "./LoginContent";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Suspense } from "react";
@@ -26,6 +22,7 @@ export default async function LoginPage() {
             fallback={
               <div className="flex w-full flex-col gap-3">
                 {Array.from({ length: 4 }).map((_, i) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: then what else
                   <Skeleton key={i} className="h-8 w-full rounded-md" />
                 ))}
               </div>

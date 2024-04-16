@@ -14,7 +14,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 
 const formSchema = z.object({
   username: z.string(),
@@ -26,30 +26,34 @@ export default function LoginForm() {
     resolver: zodResolver(formSchema),
   });
 
-  const { mutate } = api.session.login.useMutation({
+  const { refresh } = useRouter();
+  const { mutate, isPending } = api.session.login.useMutation({
     onSuccess: (res) => {
       if (res.success) {
-        redirect("/dashboard");
+        refresh();
       } else {
-        form.setError("root", { message: res.reason });
+        form.setError("username", { message: res.reason });
+        form.setError("password", { message: res.reason });
       }
     },
     onError: (err) => {
-      form.setError("root", { message: `Internal error: ${err.message}` });
+      form.setError("username", { message: `Internal error: ${err.message}` });
+      form.setError("password", { message: `Internal error: ${err.message}` });
     },
   });
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(async () => {
-          console.log("hmm");
+        onSubmit={form.handleSubmit(async (data) => {
+          mutate({ username: data.username, password: data.password });
         })}
         className="flex flex-col gap-4"
       >
         <FormField
           control={form.control}
           name="username"
+          disabled={isPending}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Username</FormLabel>
@@ -63,6 +67,7 @@ export default function LoginForm() {
         <FormField
           control={form.control}
           name="password"
+          disabled={isPending}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
