@@ -1,7 +1,7 @@
 // Example model schema from the Drizzle docs
 // https://orm.drizzle.team/docs/sql-schema-declaration
 
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { index, int, sqliteTableCreator, text } from "drizzle-orm/sqlite-core";
 
 /**
@@ -23,6 +23,50 @@ export const users = createTable("user", {
   createdAt: int("created_at", { mode: "timestamp" })
     .default(sql`CURRENT_TIMESTAMP`)
 });
+
+export const patient = createTable("patient", {
+  id: int("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+
+  username: text("username", { length: 256 }).notNull(),
+  password: text("password", { length: 256 }).notNull(),
+
+  createdAt: int("created_at", { mode: "timestamp" })
+    .default(sql`CURRENT_TIMESTAMP`)
+})
+
+export const schedule = createTable("schedule", {
+  id: int("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
+
+  dateYear: int("date_year", { mode: "number" }).notNull(),
+  dateMonth: int("date_mon", { mode: "number" }).notNull(),
+  dateDay: int("date_day", { mode: "number" }).notNull(),
+
+  startHour: int("start_h", { mode: "number" }).notNull(),
+  startMinute: int("start_m", { mode: "number" }).notNull(),
+
+  endHour: int("start_h", { mode: "number" }).notNull(),
+  endMinute: int("start_m", { mode: "number" }).notNull(),
+
+  // if isBreak is true, then the fields below is_break shall be null, and otherwise
+  isBreak: int("is_break", { mode: "boolean" }).notNull(),
+
+  patientId: int("patient_id"),
+  title: text("title", { length: 256 }),
+  status: text("status", { enum: ["appointed", "checked-in", "in-progress", "finished"] }),
+
+  createdAt: int("created_at", { mode: "timestamp" })
+    .default(sql`CURRENT_TIMESTAMP`)
+})
+
+export const schedulePatientRelations = relations(
+  schedule,
+  ({ one }) => ({
+    patient: one(patient, {
+      fields: [schedule.patientId],
+      references: [patient.id],
+    })
+  })
+)
 
 export const posts = createTable(
   "post",

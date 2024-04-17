@@ -1,5 +1,6 @@
-import { postRouter } from "~/server/api/routers/post";
 import { sessionRouter } from "./routers/session";
+import { scheduleRouter } from "./routers/schedule";
+
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -8,8 +9,8 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-  post: postRouter,
-  session: sessionRouter
+  session: sessionRouter,
+  schedule: scheduleRouter,
 });
 
 // export type definition of API

@@ -6,7 +6,7 @@ import { id } from "date-fns/locale";
 import { create } from "zustand";
 import { format } from "date-fns";
 
-const useSelectedDate = create<{ date: Date, setDate: (Date) => void }>((set) => ({
+const useSelectedDate = create<{ date: Date, setDate: (date: Date) => void }>((set) => ({
   date: new Date(),
   setDate: (date: Date) => set({ date }),
 }))
