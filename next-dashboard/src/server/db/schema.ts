@@ -20,8 +20,9 @@ export const users = createTable("user", {
   username: text("username", { length: 256 }).notNull(),
   password: text("password", { length: 256 }).notNull(),
 
-  createdAt: int("created_at", { mode: "timestamp" })
-    .default(sql`CURRENT_TIMESTAMP`)
+  createdAt: int("created_at", { mode: "timestamp" }).default(
+    sql`CURRENT_TIMESTAMP`,
+  ),
 });
 
 export const patient = createTable("patient", {
@@ -30,9 +31,10 @@ export const patient = createTable("patient", {
   username: text("username", { length: 256 }).notNull(),
   password: text("password", { length: 256 }).notNull(),
 
-  createdAt: int("created_at", { mode: "timestamp" })
-    .default(sql`CURRENT_TIMESTAMP`)
-})
+  createdAt: int("created_at", { mode: "timestamp" }).default(
+    sql`CURRENT_TIMESTAMP`,
+  ),
+});
 
 export const schedule = createTable("schedule", {
   id: int("id", { mode: "number" }).primaryKey({ autoIncrement: true }),
@@ -52,21 +54,21 @@ export const schedule = createTable("schedule", {
 
   patientId: int("patient_id"),
   title: text("title", { length: 256 }),
-  status: text("status", { enum: ["appointed", "checked-in", "in-progress", "finished"] }),
+  status: text("status", {
+    enum: ["appointed", "checked-in", "in-progress", "finished"],
+  }),
 
-  createdAt: int("created_at", { mode: "timestamp" })
-    .default(sql`CURRENT_TIMESTAMP`)
-})
+  createdAt: int("created_at", { mode: "timestamp" }).default(
+    sql`CURRENT_TIMESTAMP`,
+  ),
+});
 
-export const schedulePatientRelations = relations(
-  schedule,
-  ({ one }) => ({
-    patient: one(patient, {
-      fields: [schedule.patientId],
-      references: [patient.id],
-    })
-  })
-)
+export const schedulePatientRelations = relations(schedule, ({ one }) => ({
+  patient: one(patient, {
+    fields: [schedule.patientId],
+    references: [patient.id],
+  }),
+}));
 
 export const posts = createTable(
   "post",

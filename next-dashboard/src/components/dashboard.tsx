@@ -1,9 +1,31 @@
-import Link from "next/link"
-import { Button } from "~/components/ui/button"
-import { CardTitle, CardDescription, CardHeader, CardContent, Card } from "~/components/ui/card"
-import { Input } from "~/components/ui/input"
-import { DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem, DropdownMenuContent, DropdownMenu } from "~/components/ui/dropdown-menu"
-import { BellIcon, CalendarCheckIcon, CalendarIcon, CircleIcon, HomeIcon, Package2Icon, SearchIcon, UsersIcon } from "lucide-react"
+import Link from "next/link";
+import { Button } from "~/components/ui/button";
+import {
+  CardTitle,
+  CardDescription,
+  CardHeader,
+  CardContent,
+  Card,
+} from "~/components/ui/card";
+import { Input } from "~/components/ui/input";
+import {
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenu,
+} from "~/components/ui/dropdown-menu";
+import {
+  BellIcon,
+  CalendarCheckIcon,
+  CalendarIcon,
+  CircleIcon,
+  HomeIcon,
+  Package2Icon,
+  SearchIcon,
+  UsersIcon,
+} from "lucide-react";
 
 export function Dashboard() {
   return (
@@ -56,7 +78,10 @@ export function Dashboard() {
             <Card>
               <CardHeader className="pb-4">
                 <CardTitle>Upgrade to Pro</CardTitle>
-                <CardDescription>Unlock all features and get unlimited access to our support team</CardDescription>
+                <CardDescription>
+                  Unlock all features and get unlimited access to our support
+                  team
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button className="w-full" size="sm">
@@ -126,7 +151,9 @@ export function Dashboard() {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Today&apos;s Schedule</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Today&apos;s Schedule
+                </CardTitle>
                 <Button>Add Appointment</Button>
               </CardHeader>
               <CardContent className="p-0">
@@ -171,7 +198,9 @@ export function Dashboard() {
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                <CardTitle className="text-sm font-medium">Upcoming Appointments</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Upcoming Appointments
+                </CardTitle>
                 <Button>Add Appointment</Button>
               </CardHeader>
               <CardContent className="p-0">
@@ -218,5 +247,5 @@ export function Dashboard() {
         </main>
       </div>
     </div>
-  )
+  );
 }

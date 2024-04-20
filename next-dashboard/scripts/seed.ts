@@ -2,7 +2,9 @@
 
 // yeah these kinda weird
 (await import("dotenv")).config();
-const { default: { hash } } = await import("bcryptjs");
+const {
+  default: { hash },
+} = await import("bcryptjs");
 const { db } = await import("../src/server/db");
 const { users } = await import("../src/server/db/schema");
 

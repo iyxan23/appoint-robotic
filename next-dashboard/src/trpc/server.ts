@@ -17,7 +17,7 @@ const createContext = () => {
 
   return createTRPCContext({
     headers: heads,
-    cookies:{
+    cookies: {
       getCookie(name) {
         return cookis.get(name)?.value;
       },
@@ -33,7 +33,7 @@ const createContext = () => {
           "Unable to modify cookies in an RSC, use a middleware or API Routes instead.",
         );
       },
-    }
+    },
   });
 };
 

@@ -103,7 +103,9 @@ export const createTRPCRouter = t.router;
 export const withSessionProcedure = t.procedure.use(async (opts) => {
   const sessionCookie = opts.ctx.cookies.getCookie(SESSION_COOKIE);
   const session = sessionCookie
-    ? await schemaSession.parseAsync(await unsealData(sessionCookie)).catch(() => null)
+    ? await schemaSession
+        .parseAsync(await unsealData(sessionCookie))
+        .catch(() => null)
     : null;
 
   return opts.next({

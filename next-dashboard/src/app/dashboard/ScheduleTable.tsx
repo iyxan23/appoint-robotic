@@ -1,69 +1,102 @@
 "use client";
 
-import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from "@tanstack/react-table";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { cn } from "~/lib/utils";
 
 type Time = {
   hour: number;
   minute: number;
-}
+};
 
 function formatTime(time: Time): string {
-  return `${time.hour >= 10 ? time.hour : `0${time.hour}`}:${time.minute >= 10 ? time.minute : `0${time.minute}`}`
+  return `${time.hour >= 10 ? time.hour : `0${time.hour}`}:${
+    time.minute >= 10 ? time.minute : `0${time.minute}`
+  }`;
 }
 
-type ScheduleItem = {
-  type: "appointment",
+type ScheduleItem =
+  | {
+      type: "appointment";
 
-  start: Time,
-  end: Time,
+      start: Time;
+      end: Time;
 
-  patient: string,
-  title: string,
+      patient: string;
+      title: string;
 
-  status: "cancelled" | "finished" | "in-progress" | "checked-in" | "appointed"
-} | {
-  type: "break",
+      status:
+        | "cancelled"
+        | "finished"
+        | "in-progress"
+        | "checked-in"
+        | "appointed";
+    }
+  | {
+      type: "break";
 
-  start: Time,
-  end: Time,
-}
+      start: Time;
+      end: Time;
+    };
 
-const columnHelper = createColumnHelper<ScheduleItem>()
+const columnHelper = createColumnHelper<ScheduleItem>();
 const columns = [
-  columnHelper.accessor(row => `${formatTime(row.start)} - ${formatTime(row.end)}`, {
-    id: "time",
-    header: "Jadwal"
-  }),
+  columnHelper.accessor(
+    (row) => `${formatTime(row.start)} - ${formatTime(row.end)}`,
+    {
+      id: "time",
+      header: "Jadwal",
+    },
+  ),
   columnHelper.accessor("type", {
     header: "Tipe",
-    cell: r => r.getValue() === "appointment" ? "Janji Temu" : "Istirahat",
+    cell: (r) => (r.getValue() === "appointment" ? "Janji Temu" : "Istirahat"),
   }),
-  columnHelper.accessor(row => row.type === "appointment" ? row.patient : null, {
-    id: "patient",
-    header: "Pasien",
-  }),
-  columnHelper.accessor(row => row.type === "appointment" ? row.title : null, {
-    header: "Perihal"
-  }),
-  columnHelper.accessor(row => row.type === "appointment" ? row.status : null, {
-    id: "status",
-    header: "Status",
-    cell: r => {
-      const val = r.getValue();
-      if (val == null) return null;
+  columnHelper.accessor(
+    (row) => (row.type === "appointment" ? row.patient : null),
+    {
+      id: "patient",
+      header: "Pasien",
+    },
+  ),
+  columnHelper.accessor(
+    (row) => (row.type === "appointment" ? row.title : null),
+    {
+      header: "Perihal",
+    },
+  ),
+  columnHelper.accessor(
+    (row) => (row.type === "appointment" ? row.status : null),
+    {
+      id: "status",
+      header: "Status",
+      cell: (r) => {
+        const val = r.getValue();
+        if (val == null) return null;
 
-      return ({
-        appointed: "Terjadwal",
-        "checked-in": "Telah cek-in",
-        cancelled: "Dibatalkan",
-        "in-progress": "Sedang Ditangani",
-        finished: "Selesai",
-      })[val];
-    }
-  })
-]
+        return {
+          appointed: "Terjadwal",
+          "checked-in": "Telah cek-in",
+          cancelled: "Dibatalkan",
+          "in-progress": "Sedang Ditangani",
+          finished: "Selesai",
+        }[val];
+      },
+    },
+  ),
+];
 
 export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
   const table = useReactTable({
@@ -84,11 +117,11 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
-                )
+                );
               })}
             </TableRow>
           ))}
@@ -99,7 +132,9 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && "selected"}
-                className={cn(row.getValue("type") === "break" && "bg-muted hover:bg-muted")}
+                className={cn(
+                  row.getValue("type") === "break" && "bg-muted hover:bg-muted",
+                )}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
@@ -118,5 +153,5 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
         </TableBody>
       </Table>
     </div>
-  )
+  );
 }
