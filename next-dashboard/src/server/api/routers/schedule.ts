@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, privateProcedure } from "../trpc";
 import { SCHEDULE_TAG } from "./_tags";
-import { schemaDate, schemaSchedule, schemaScheduleAppointment, schemaScheduleBreak } from "~/lib/schemas/schedule";
-import { between, sql } from "drizzle-orm";
+import { schemaDate, schemaSchedule, schemaScheduleAppointment, schemaScheduleBreak, schemaScheduleStatus } from "~/lib/schemas/schedule";
+import { between, eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { schedule } from "~/server/db/schema";
 
@@ -99,6 +99,24 @@ export const scheduleRouter = createTRPCRouter({
 
       return convertDbScheduleToSchedule(newSchedule);
     }),
+
+  updateScheduleStatus: privateProcedure
+    .meta({ openapi: { method: "POST", path: "/schedule/updateStatus", tags: [SCHEDULE_TAG] } })
+    .input(z.object({ id: z.number(), status: schemaScheduleStatus }))
+    .output(schemaSchedule)
+    .mutation(async ({ input, ctx }) => {
+      const updated = await ctx.db
+        .update(schedule)
+        .set({ status: input.status })
+        .where(eq(schedule.id, input.id)).returning();
+
+      const updatedSchedule = updated[0];
+      if (!updatedSchedule) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: `no schedule with id ${input.id} found` });
+      }
+
+      return convertDbScheduleToSchedule(updatedSchedule);
+    })
 });
 
 function convertDbScheduleToSchedule(
@@ -121,5 +139,6 @@ function convertDbScheduleToSchedule(
 
     patientId: ds.patientId ?? 1, // TODO - should've done a null assertion check but that'd be a bit too overkill
     title: ds.title ?? "Unknown title",
+    status: ds.status,
   }
 }
