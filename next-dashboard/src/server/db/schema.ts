@@ -46,8 +46,8 @@ export const schedule = createTable("schedule", {
   startHour: int("start_h", { mode: "number" }).notNull(),
   startMinute: int("start_m", { mode: "number" }).notNull(),
 
-  endHour: int("start_h", { mode: "number" }).notNull(),
-  endMinute: int("start_m", { mode: "number" }).notNull(),
+  endHour: int("end_h", { mode: "number" }).notNull(),
+  endMinute: int("end_m", { mode: "number" }).notNull(),
 
   // if isBreak is true, then the fields below is_break shall be null, and otherwise
   isBreak: int("is_break", { mode: "boolean" }).notNull(),
