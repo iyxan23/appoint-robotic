@@ -20,11 +20,13 @@ export const scheduleRouter = createTRPCRouter({
     .input(
       z.object({ range: z.object({ start: schemaDate, end: schemaDate }) }),
     )
-    // { year: { month: { day: schedule[] } } }
     .output(
       z.record(
-        z.number(),
-        z.record(z.number(), z.record(z.number(), schemaSchedule.array())),
+        z.coerce.number(),
+        z.record(
+          z.coerce.number(),
+          z.record(z.coerce.number(), schemaSchedule.array()),
+        ),
       ),
     )
     .query(async ({ input: { range }, ctx }) => {
@@ -35,8 +37,8 @@ export const scheduleRouter = createTRPCRouter({
       // So I asked an AI, it gave an interesting solution of multiplying the year by 1000s and month by 100s.
       // so that's cool
       const start =
-        range.start.year * 1000 + range.start.month * 100 + range.start.day;
-      const end = range.end.year * 1000 + range.end.month * 100 + range.end.day;
+        range.start.year * 10000 + range.start.month * 100 + range.start.day;
+      const end = range.end.year * 10000 + range.end.month * 100 + range.end.day;
 
       if (end < start) {
         throw new TRPCError({
@@ -45,41 +47,43 @@ export const scheduleRouter = createTRPCRouter({
         });
       }
 
-      const dbSchedules = await ctx.db
-        .select()
-        .from(schedule)
-        .where(
-          between(
-            sql`${schedule.dateYear} * 1000 + ${schedule.dateMonth} * 100 + ${schedule.dateDay}`,
-            start,
-            end,
-          ),
-        );
+      const wher = between(
+        sql`${schedule.dateYear} * 10000 + ${schedule.dateMonth} * 100 + ${schedule.dateDay}`,
+        start,
+        end,
+      );
+
+      const dbSchedules = await ctx.db.query.schedule.findMany({
+        where: wher,
+      });
 
       const schedules: (z.infer<typeof schemaSchedule> & {
         date: z.infer<typeof schemaDate>;
-      })[] = dbSchedules.map(convertDbScheduleToSchedule);
+      })[] = dbSchedules.map((ds) => convertDbScheduleToSchedule(ds));
 
-      // a messy code,
-      // but it is rather simple, it essentially builds up the tree { year: { month: { day: schedule []}}}
-      // by utilizing the `.date` field inside each schedule.
-      const result = schedules.reduce(
-        (acc, { date: { year, month, day }, ...schedule }) => {
-          if (!acc[year]) acc[year] = { [month]: { [day]: [schedule] } };
-          else if (!acc?.[year]?.[month])
-            acc[year] = { ...acc[year], [month]: { [day]: [schedule] } };
-          else
-            acc[year] = {
-              ...acc[year],
-              [month]: { ...acc[year]?.[month], [day]: [schedule] },
-            };
-          return acc;
-        },
-        {} as Record<
-          number,
-          Record<number, Record<number, z.infer<typeof schemaSchedule>[]>>
-        >,
-      );
+      // transform the schedules into a tree of records
+      const result: Record<
+        number,
+        Record<number, Record<number, z.infer<typeof schemaSchedule>[]>>
+      > = {};
+
+      for (const {
+        date: { year, month, day },
+        ...schedule
+      } of schedules) {
+        if (!result[year]) result[year] = { [month]: { [day]: [schedule] } };
+        else if (!result[year]?.[month]) {
+          // biome-ignore lint/style/noNonNullAssertion: see the code above
+          result[year]![month] = { [day]: [schedule] };
+          // biome-ignore lint/style/noNonNullAssertion: see the code above
+        } else if (!result[year]![month]?.[day]) {
+          // biome-ignore lint/style/noNonNullAssertion: see the code above
+          result[year]![month]![day] = [];
+        } else {
+          // biome-ignore lint/style/noNonNullAssertion: see the code above
+          result[year]![month]![day]!.push(schedule);
+        }
+      }
 
       return result;
     }),
@@ -132,7 +136,7 @@ export const scheduleRouter = createTRPCRouter({
 
           isBreak: input.type === "break",
 
-          patientId: input.type === "appointment" ? input.patientId : null,
+          patientId: input.type === "appointment" ? input.patient.id : null,
           title: input.type === "appointment" ? input.title : null,
           status: input.type === "appointment" ? "appointed" : null,
         })
@@ -179,26 +183,27 @@ export const scheduleRouter = createTRPCRouter({
 
 function convertDbScheduleToSchedule(
   ds: typeof schedule.$inferSelect,
+  patient?: { id: number; name: string },
 ): z.infer<typeof schemaSchedule> & { date: z.infer<typeof schemaDate> } {
   return ds.isBreak
     ? {
-        type: "break",
-        date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
-        id: ds.id,
+      type: "break",
+      date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
+      id: ds.id,
 
-        start: { hour: ds.startHour, minute: ds.startMinute },
-        end: { hour: ds.endHour, minute: ds.endMinute },
-      }
+      start: { hour: ds.startHour, minute: ds.startMinute },
+      end: { hour: ds.endHour, minute: ds.endMinute },
+    }
     : {
-        type: "appointment",
-        date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
-        id: ds.id,
+      type: "appointment",
+      date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
+      id: ds.id,
 
-        start: { hour: ds.startHour, minute: ds.startMinute },
-        end: { hour: ds.endHour, minute: ds.endMinute },
+      start: { hour: ds.startHour, minute: ds.startMinute },
+      end: { hour: ds.endHour, minute: ds.endMinute },
 
-        patientId: ds.patientId ?? 1, // TODO - should've done a null assertion check but that'd be a bit too overkill
-        title: ds.title ?? "Unknown title",
-        status: ds.status,
-      };
+      patient: patient ?? { name: "Unknown patient", id: 1 }, // TODO - should've done a null assertion check but that'd be a bit too overkill
+      title: ds.title ?? "Unknown title",
+      status: ds.status ?? "finished",
+    };
 }

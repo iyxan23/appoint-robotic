@@ -1,10 +1,20 @@
 "use client";
 
-import { Calendar } from "~/components/ui/calendar";
-import ScheduleTable from "./ScheduleTable";
+import {
+  addWeeks,
+  endOfWeek,
+  format,
+  getDate,
+  getMonth,
+  getYear,
+} from "date-fns";
 import { id } from "date-fns/locale";
 import { create } from "zustand";
-import { format } from "date-fns";
+import { Calendar } from "~/components/ui/calendar";
+import { dateToScheduleDate } from "~/lib/utils";
+import { api } from "~/trpc/react";
+import ScheduleTable from "./ScheduleTable";
+import { Skeleton } from "~/components/ui/skeleton";
 
 const useSelectedDate = create<{ date: Date; setDate: (date: Date) => void }>(
   (set) => ({
@@ -15,6 +25,20 @@ const useSelectedDate = create<{ date: Date; setDate: (date: Date) => void }>(
 
 export default function ScheduleDisplay() {
   const { date, setDate } = useSelectedDate();
+  const { data, isLoading } = api.schedule.listSchedules.useQuery({
+    range: {
+      start: dateToScheduleDate(new Date()),
+      end: dateToScheduleDate(endOfWeek(addWeeks(new Date(), 1))),
+    },
+  });
+
+  const selectedDate = data?.[getYear(date)]?.[getMonth(date)]?.[
+    getDate(date)
+  ]?.map((schedule) =>
+    schedule.type === "appointment"
+      ? { ...schedule, patient: schedule.patient.name ?? "Unknown Patient" }
+      : { ...schedule },
+  );
 
   return (
     <>
@@ -29,39 +53,19 @@ export default function ScheduleDisplay() {
         />
         <article className="flex flex-col gap-4">
           <h1>{format(date, "cccc, dd MMMM yyyy", { locale: id })}</h1>
-          <ScheduleTable
-            data={[
-              {
-                type: "appointment",
-                start: { hour: 16, minute: 0 },
-                end: { hour: 17, minute: 0 },
-                patient: "Azzam",
-                title: "Sakit kepala atuh",
-                status: "appointed",
-              },
-              {
-                type: "appointment",
-                start: { hour: 17, minute: 0 },
-                end: { hour: 18, minute: 30 },
-                patient: "Koriz",
-                title: "Kaki bintul2 bro",
-                status: "appointed",
-              },
-              {
-                type: "break",
-                start: { hour: 18, minute: 30 },
-                end: { hour: 19, minute: 0 },
-              },
-              {
-                type: "appointment",
-                start: { hour: 19, minute: 0 },
-                end: { hour: 19, minute: 30 },
-                patient: "Ridho",
-                title: "Sakit mulut g bisa ngomong",
-                status: "appointed",
-              },
-            ]}
-          />
+          {isLoading ? (
+            <div className="flex flex-col gap-4">
+              <Skeleton className="h-10" />
+              <Skeleton className="h-10" />
+              <Skeleton className="h-10" />
+              <Skeleton className="h-10" />
+              <Skeleton className="h-10" />
+            </div>
+          ) : (
+            <ScheduleTable
+              data={selectedDate ?? []}
+            />
+          )}
         </article>
       </div>
     </>

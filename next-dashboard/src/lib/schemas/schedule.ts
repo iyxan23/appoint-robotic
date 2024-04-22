@@ -22,12 +22,13 @@ export const schemaScheduleAppointment = z.object({
   type: z.literal("appointment"),
 
   id: z.number(),
-  patientId: z.number(),
   title: z.string(),
 
   status: schemaScheduleStatus,
   start: schemaTime,
   end: schemaTime,
+
+  patient: z.object({ id: z.number(), name: z.string().optional() }),
 });
 
 export const schemaScheduleBreak = z.object({
