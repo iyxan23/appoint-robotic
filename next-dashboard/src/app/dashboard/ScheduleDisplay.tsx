@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  addMonths,
   addWeeks,
   differenceInWeeks,
   endOfDay,
@@ -63,7 +64,7 @@ export default function ScheduleDisplay() {
           locale={id}
           selected={date}
           onSelect={(d) => setDate(d ?? new Date())}
-          toMonth={new Date()}
+          toMonth={addMonths(new Date(), 1)}
         />
         <article className="flex flex-col gap-4">
           <h1>{format(date, "cccc, dd MMMM yyyy", { locale: id })}</h1>
