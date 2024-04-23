@@ -53,8 +53,8 @@ async function main() {
 
     // create quite some schedules
     const today = new Date();
-    const startDate = subWeeks(today, 2);
-    const endDate = addWeeks(today, 2);
+    const startDate = subWeeks(today, 4);
+    const endDate = addWeeks(today, 4);
 
     const hourStart = 8;
     const hourEnd = 17;
