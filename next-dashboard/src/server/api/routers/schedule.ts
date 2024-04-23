@@ -8,7 +8,7 @@ import {
   schemaScheduleBreak,
   schemaScheduleStatus,
 } from "~/lib/schemas/schedule";
-import { between, eq, sql } from "drizzle-orm";
+import { and, between, eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { schedule } from "~/server/db/schema";
 
@@ -38,7 +38,8 @@ export const scheduleRouter = createTRPCRouter({
       // so that's cool
       const start =
         range.start.year * 10000 + range.start.month * 100 + range.start.day;
-      const end = range.end.year * 10000 + range.end.month * 100 + range.end.day;
+      const end =
+        range.end.year * 10000 + range.end.month * 100 + range.end.day;
 
       if (end < start) {
         throw new TRPCError({
@@ -57,35 +58,37 @@ export const scheduleRouter = createTRPCRouter({
         where: wher,
       });
 
-      const schedules: (z.infer<typeof schemaSchedule> & {
-        date: z.infer<typeof schemaDate>;
-      })[] = dbSchedules.map((ds) => convertDbScheduleToSchedule(ds));
+      const schedules = dbSchedules.map((ds) =>
+        convertDbScheduleToSchedule(ds),
+      );
 
-      // transform the schedules into a tree of records
-      const result: Record<
-        number,
-        Record<number, Record<number, z.infer<typeof schemaSchedule>[]>>
-      > = {};
+      return nestSchedules(schedules);
+    }),
 
-      for (const {
-        date: { year, month, day },
-        ...schedule
-      } of schedules) {
-        if (!result[year]) result[year] = { [month]: { [day]: [schedule] } };
-        else if (!result[year]?.[month]) {
-          // biome-ignore lint/style/noNonNullAssertion: see the code above
-          result[year]![month] = { [day]: [schedule] };
-          // biome-ignore lint/style/noNonNullAssertion: see the code above
-        } else if (!result[year]![month]?.[day]) {
-          // biome-ignore lint/style/noNonNullAssertion: see the code above
-          result[year]![month]![day] = [];
-        } else {
-          // biome-ignore lint/style/noNonNullAssertion: see the code above
-          result[year]![month]![day]!.push(schedule);
-        }
-      }
+  getSchedule: privateProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/schedule/get",
+        tags: [SCHEDULE_TAG],
+      },
+    })
+    .input(schemaDate)
+    .output(schemaSchedule.array())
+    .query(async ({ input, ctx }) => {
+      const wher = and(
+        and(
+          eq(schedule.dateYear, input.year),
+          eq(schedule.dateMonth, input.month),
+        ),
+        eq(schedule.dateDay, input.day),
+      );
 
-      return result;
+      const dbSchedules = await ctx.db.query.schedule.findMany({
+        where: wher,
+      });
+
+      return dbSchedules.map((ds) => convertDbScheduleToSchedule(ds));
     }),
 
   createSchedule: privateProcedure
@@ -206,4 +209,39 @@ function convertDbScheduleToSchedule(
       title: ds.title ?? "Unknown title",
       status: ds.status ?? "finished",
     };
+}
+
+function nestSchedules(
+  schedules: (z.infer<typeof schemaSchedule> & {
+    date: z.infer<typeof schemaDate>;
+  })[],
+): Record<
+  number,
+  Record<number, Record<number, z.infer<typeof schemaSchedule>[]>>
+> {
+  // transform the schedules into a tree of records
+  const result: Record<
+    number,
+    Record<number, Record<number, z.infer<typeof schemaSchedule>[]>>
+  > = {};
+
+  for (const {
+    date: { year, month, day },
+    ...schedule
+  } of schedules) {
+    if (!result[year]) result[year] = { [month]: { [day]: [schedule] } };
+    else if (!result[year]?.[month]) {
+      // biome-ignore lint/style/noNonNullAssertion: see the code above
+      result[year]![month] = { [day]: [schedule] };
+      // biome-ignore lint/style/noNonNullAssertion: see the code above
+    } else if (!result[year]![month]?.[day]) {
+      // biome-ignore lint/style/noNonNullAssertion: see the code above
+      result[year]![month]![day] = [];
+    } else {
+      // biome-ignore lint/style/noNonNullAssertion: see the code above
+      result[year]![month]![day]!.push(schedule);
+    }
+  }
+
+  return result;
 }
