@@ -2,11 +2,15 @@
 
 import {
   addWeeks,
+  differenceInWeeks,
+  endOfDay,
   endOfWeek,
   format,
   getDate,
   getMonth,
   getYear,
+  startOfDay,
+  subWeeks,
 } from "date-fns";
 import { id } from "date-fns/locale";
 import { create } from "zustand";
@@ -25,11 +29,21 @@ const useSelectedDate = create<{ date: Date; setDate: (date: Date) => void }>(
 
 export default function ScheduleDisplay() {
   const { date, setDate } = useSelectedDate();
+
+  let start = startOfDay(new Date());
+  let end = endOfWeek(addWeeks(endOfDay(new Date()), 1));
+
+  const less = date.valueOf() < start.valueOf();
+  const over = date.valueOf() > end.valueOf();
+  if (less || over) {
+    const diff = differenceInWeeks(start, date);
+
+    start = subWeeks(start, diff - (over ? 1 : -1));
+    end = subWeeks(end, diff - (over ? 1 : -1));
+  }
+
   const { data, isLoading } = api.schedule.listSchedules.useQuery({
-    range: {
-      start: dateToScheduleDate(new Date()),
-      end: dateToScheduleDate(endOfWeek(addWeeks(new Date(), 1))),
-    },
+    range: { start: dateToScheduleDate(start), end: dateToScheduleDate(end) },
   });
 
   const selectedDate = data?.[getYear(date)]?.[getMonth(date)]?.[
@@ -62,9 +76,7 @@ export default function ScheduleDisplay() {
               <Skeleton className="h-10" />
             </div>
           ) : (
-            <ScheduleTable
-              data={selectedDate ?? []}
-            />
+            <ScheduleTable data={selectedDate ?? []} />
           )}
         </article>
       </div>
