@@ -1,4 +1,4 @@
-import ScheduleDisplay from "./ScheduleDisplay";
+import MainDashboardDisplay from "./MainDashboardDisplay";
 import WelcomeBack from "./WelcomeBack";
 
 export default function DashboardPage() {
@@ -9,7 +9,7 @@ export default function DashboardPage() {
           <WelcomeBack />
         </h1>
       </div>
-      <ScheduleDisplay />
+      <MainDashboardDisplay />
     </main>
   );
 }
