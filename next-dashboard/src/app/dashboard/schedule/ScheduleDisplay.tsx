@@ -18,7 +18,7 @@ import { create } from "zustand";
 import { Calendar } from "~/components/ui/calendar";
 import { dateToScheduleDate } from "~/lib/utils";
 import { api } from "~/trpc/react";
-import ScheduleTable from "./ScheduleTable";
+import ScheduleTable from "../ScheduleTable";
 import { Skeleton } from "~/components/ui/skeleton";
 
 const useSelectedDate = create<{ date: Date; setDate: (date: Date) => void }>(
