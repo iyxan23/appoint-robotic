@@ -22,34 +22,33 @@ type Time = {
 };
 
 function formatTime(time: Time): string {
-  return `${time.hour >= 10 ? time.hour : `0${time.hour}`}:${
-    time.minute >= 10 ? time.minute : `0${time.minute}`
-  }`;
+  return `${time.hour >= 10 ? time.hour : `0${time.hour}`}:${time.minute >= 10 ? time.minute : `0${time.minute}`
+    }`;
 }
 
 type ScheduleItem =
   | {
-      type: "appointment";
+    type: "appointment";
 
-      start: Time;
-      end: Time;
+    start: Time;
+    end: Time;
 
-      patient: string;
-      title: string;
+    patient: string;
+    title: string;
 
-      status:
-        | "cancelled"
-        | "finished"
-        | "in-progress"
-        | "checked-in"
-        | "appointed";
-    }
+    status:
+    | "cancelled"
+    | "finished"
+    | "in-progress"
+    | "checked-in"
+    | "appointed";
+  }
   | {
-      type: "break";
+    type: "break";
 
-      start: Time;
-      end: Time;
-    };
+    start: Time;
+    end: Time;
+  };
 
 const columnHelper = createColumnHelper<ScheduleItem>();
 const columns = [
@@ -60,10 +59,6 @@ const columns = [
       header: "Jadwal",
     },
   ),
-  columnHelper.accessor("type", {
-    header: "Tipe",
-    cell: (r) => (r.getValue() === "appointment" ? "Janji Temu" : "Istirahat"),
-  }),
   columnHelper.accessor(
     (row) => (row.type === "appointment" ? row.patient : null),
     {
@@ -117,9 +112,9 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
                   </TableHead>
                 );
               })}
@@ -128,21 +123,33 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-                className={cn(
-                  row.getValue("type") === "break" && "bg-muted hover:bg-muted",
-                )}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+            table.getRowModel().rows.map((row) =>
+              row.original.type === "appointment" ? (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ) : (
+                <TableRow className="bg-muted hover:bg-muted">
+                  <TableCell>
+                    {formatTime(row.original.start)}-
+                    {formatTime(row.original.end)}
                   </TableCell>
-                ))}
-              </TableRow>
-            ))
+                  <TableCell colSpan={4}>
+                    Istirahat
+                  </TableCell>
+                </TableRow>
+              ),
+            )
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
