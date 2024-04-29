@@ -1,6 +1,5 @@
 import { createOpenApiNextAppHandler } from "next-trpc-openapi";
-import { type NextRequest } from "next/server";
-import { env } from "~/env";
+import type { NextRequest } from "next/server";
 import { appRouter } from "~/server/api/root";
 import { createTRPCContext } from "~/server/api/trpc";
 
@@ -38,13 +37,14 @@ const handler = createOpenApiNextAppHandler({
   createContext,
   responseMeta: undefined,
   onError:
-    env.NODE_ENV === "development"
-      ? ({ path, error }) => {
+      () => {
+          // console.error(
+          //   `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
+          // );
           console.error(
-            `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
+            '❌ tRPC failed an OpenAPI next handler; unable to get information.',
           );
         }
-      : undefined,
 });
 
-export default handler;
+export { handler as GET, handler as POST };

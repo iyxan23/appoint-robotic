@@ -106,7 +106,7 @@ const columns = [
   columnHelper.display({
     id: "actions",
     header: "Aksi",
-    cell: () => <ActionDropdown />,
+    cell: (r) => <ActionDropdown scheduleId={Number(r.row.id)} />,
   }),
 ];
 

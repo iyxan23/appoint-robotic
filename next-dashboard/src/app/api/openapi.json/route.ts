@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { openApiDocument } from "~/server/api/openapi";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const openApiDoc = openApiDocument();
 
