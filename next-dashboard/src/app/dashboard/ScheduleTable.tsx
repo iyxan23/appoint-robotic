@@ -6,6 +6,17 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { MoreHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Button } from "~/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "~/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -15,6 +26,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { cn } from "~/lib/utils";
+import { api } from "~/trpc/react";
 
 type Time = {
   hour: number;
@@ -91,6 +103,11 @@ const columns = [
       },
     },
   ),
+  columnHelper.display({
+    id: "actions",
+    header: "Aksi",
+    cell: () => <ActionDropdown />,
+  }),
 ];
 
 export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
@@ -144,9 +161,7 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
                     {formatTime(row.original.start)}-
                     {formatTime(row.original.end)}
                   </TableCell>
-                  <TableCell colSpan={4}>
-                    Istirahat
-                  </TableCell>
+                  <TableCell colSpan={4}>Istirahat</TableCell>
                 </TableRow>
               ),
             )
@@ -161,4 +176,29 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
       </Table>
     </div>
   );
+}
+
+function ActionDropdown({ scheduleId }: { scheduleId: number }) {
+  const { refresh } = useRouter();
+  const { mutate } = api.schedule.deleteSchedule.useMutation({
+    onSuccess: () => {
+      refresh();
+    }
+  });
+
+  return <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="ghost" className="h-8 w-8 p-0">
+        <span className="sr-only">Buka menu</span>
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+      <DropdownMenuItem onClick={() => mutate({ id: scheduleId })}>
+        Hapus
+      </DropdownMenuItem>
+      <DropdownMenuItem>View payment details</DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>;
 }

@@ -155,6 +155,34 @@ export const scheduleRouter = createTRPCRouter({
       return convertDbScheduleToSchedule(newSchedule);
     }),
 
+  deleteSchedule: privateProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/schedule/delete",
+        tags: [SCHEDULE_TAG],
+      },
+    })
+    .input(z.object({ id: z.number() }))
+    .output(schemaSchedule)
+    .mutation(async ({ input, ctx }) => {
+      const deleted = await ctx.db
+        .delete(schedule)
+        .where(eq(schedule.id, input.id))
+        .returning();
+
+      const deletedSchedule = deleted[0];
+
+      if (!deletedSchedule) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: `no schedule with id ${input.id} found`,
+        });
+      }
+
+      return convertDbScheduleToSchedule(deletedSchedule);
+    }),
+
   updateScheduleStatus: privateProcedure
     .meta({
       openapi: {
