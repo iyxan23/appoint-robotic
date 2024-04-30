@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, userProcedure } from "../trpc";
+import { createTRPCRouter, patientProcedure, userProcedure } from "../trpc";
 import { SCHEDULE_TAG } from "./_tags";
 import {
   schemaDate,
@@ -7,10 +7,19 @@ import {
   schemaScheduleAppointment,
   schemaScheduleBreak,
   schemaScheduleStatus,
+  schemaTime,
 } from "~/lib/schemas/schedule";
 import { and, between, eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { schedule } from "~/server/db/schema";
+import {
+  addWeeks,
+  endOfDay,
+  getDate,
+  getMonth,
+  getYear,
+  startOfDay,
+} from "date-fns";
 
 export const scheduleRouter = createTRPCRouter({
   listSchedules: userProcedure
@@ -209,6 +218,61 @@ export const scheduleRouter = createTRPCRouter({
       }
 
       return convertDbScheduleToSchedule(updatedSchedule);
+    }),
+
+  listEmptySchedules: patientProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/schedule/listEmptySchedules",
+        tags: [SCHEDULE_TAG],
+      },
+    })
+    .input(z.undefined())
+    .output(z.array(z.array(z.object({ start: schemaTime, end: schemaTime }))))
+    .query(async ({ ctx }) => {
+      // gets the schedules one week ahead
+      const today = startOfDay(new Date());
+      const oneWeekAhead = endOfDay(addWeeks(today, 1));
+      const start =
+        getYear(today) * 10000 + getMonth(today) * 100 + getDate(today);
+      const end =
+        getYear(oneWeekAhead) * 10000 +
+        getMonth(oneWeekAhead) * 100 +
+        getDate(oneWeekAhead);
+
+      if (end < start) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "range.start should not be larger than range.end",
+        });
+      }
+
+      const wher = between(
+        sql`${schedule.dateYear} * 10000 + ${schedule.dateMonth} * 100 + ${schedule.dateDay}`,
+        start,
+        end,
+      );
+
+      const schedules = await ctx.db.query.schedule.findMany({ where: wher });
+
+      const result: {
+        start: z.infer<typeof schemaTime>;
+        end: z.infer<typeof schemaTime>;
+      }[][] = Array.from({ length: 7 }).map(() => []);
+
+      for (const s of schedules) {
+        const date = s.dateYear * 100000 + s.dateMonth * 100 + s.dateDay;
+        const dateRelativeToWeek = date - start;
+
+        // biome-ignore lint/style/noNonNullAssertion: we know that dateRelativeToWeek is not null
+        result[dateRelativeToWeek]!.push({
+          start: { hour: s.startHour, minute: s.startMinute },
+          end: { hour: s.endHour, minute: s.endMinute },
+        });
+      }
+
+      return result;
     }),
 });
 
