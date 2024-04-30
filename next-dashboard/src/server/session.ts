@@ -5,7 +5,7 @@ import {
   sealData as ironSealData,
 } from "iron-session";
 import { env } from "~/env";
-import { type TRPCContext } from "./api/trpc";
+import type { TRPCContext } from "./api/trpc";
 
 export const SESSION_COOKIE = "session";
 export const SESSION_MAX_AGE = env.SESSION_MAX_AGE ?? 60 * 60 * 24 * 30;
@@ -17,6 +17,7 @@ export const ironSessionConfig = {
 export const schemaSession = z.object({
   id: z.number(),
   username: z.string(),
+  kind: z.union([z.literal("user"), z.literal("patient")])
 });
 
 export type Session = z.infer<typeof schemaSession>;
@@ -28,14 +29,6 @@ export const unsealData = async (data: string): Promise<Session> => {
 export const sealData = async (data: Session) => {
   return ironSealData(data, ironSessionConfig);
 };
-
-/**
- * Sets the session for the given TRPC context.
- *
- * @param {TRPCContext} context - The TRPC context
- * @param {Session | null} session - The session to be set, or null to erase it
- * @return {void}
- */
 
 export async function contextSetSession(
   context: TRPCContext,

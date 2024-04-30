@@ -11,6 +11,7 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 export const appRouter = createTRPCRouter({
   session: sessionRouter,
   schedule: scheduleRouter,
+  patient: patientRouter,
 });
 
 // export type definition of API

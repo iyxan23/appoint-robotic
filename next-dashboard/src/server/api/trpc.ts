@@ -138,3 +138,19 @@ export const privateProcedure = publicProcedure.use(async (opts) => {
 
   return opts.next({ ctx: { session: opts.ctx.session } });
 });
+
+export const userProcedure = privateProcedure.use(async (opts) => {
+  if (opts.ctx.session.kind !== "user") {
+    throw new TRPCError({ code: "NOT_FOUND" });
+  }
+
+  return opts.next({ ctx: { session: opts.ctx.session } });
+});
+
+export const patientProcedure = privateProcedure.use(async (opts) => {
+  if (opts.ctx.session.kind !== "patient") {
+    throw new TRPCError({ code: "NOT_FOUND" });
+  }
+
+  return opts.next({ ctx: { session: opts.ctx.session } });
+});

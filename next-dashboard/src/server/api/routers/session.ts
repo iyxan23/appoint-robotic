@@ -40,11 +40,14 @@ export const sessionRouter = createTRPCRouter({
         return { success: false, reason: "Invalid credentials" };
       }
 
-      await contextSetSession(ctx, {
+      const session = {
         id: user.id,
         username: user.username,
-      });
-      return { success: true, session: user };
+        kind: "user" as const,
+      };
+
+      await contextSetSession(ctx, session);
+      return { success: true, session: session };
     }),
 
   logout: privateProcedure

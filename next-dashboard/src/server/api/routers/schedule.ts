@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, privateProcedure } from "../trpc";
+import { createTRPCRouter, userProcedure } from "../trpc";
 import { SCHEDULE_TAG } from "./_tags";
 import {
   schemaDate,
@@ -13,7 +13,7 @@ import { TRPCError } from "@trpc/server";
 import { schedule } from "~/server/db/schema";
 
 export const scheduleRouter = createTRPCRouter({
-  listSchedules: privateProcedure
+  listSchedules: userProcedure
     .meta({
       openapi: { method: "GET", path: "/schedule/list", tags: [SCHEDULE_TAG] },
     })
@@ -65,7 +65,7 @@ export const scheduleRouter = createTRPCRouter({
       return nestSchedules(schedules);
     }),
 
-  getSchedule: privateProcedure
+  getSchedule: userProcedure
     .meta({
       openapi: {
         method: "GET",
@@ -91,7 +91,7 @@ export const scheduleRouter = createTRPCRouter({
       return dbSchedules.map((ds) => convertDbScheduleToSchedule(ds));
     }),
 
-  createSchedule: privateProcedure
+  createSchedule: userProcedure
     .meta({
       openapi: {
         method: "POST",
@@ -155,7 +155,7 @@ export const scheduleRouter = createTRPCRouter({
       return convertDbScheduleToSchedule(newSchedule);
     }),
 
-  deleteSchedule: privateProcedure
+  deleteSchedule: userProcedure
     .meta({
       openapi: {
         method: "POST",
@@ -183,7 +183,7 @@ export const scheduleRouter = createTRPCRouter({
       return convertDbScheduleToSchedule(deletedSchedule);
     }),
 
-  updateScheduleStatus: privateProcedure
+  updateScheduleStatus: userProcedure
     .meta({
       openapi: {
         method: "POST",
