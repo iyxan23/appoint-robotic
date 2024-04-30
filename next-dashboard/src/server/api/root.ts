@@ -1,5 +1,6 @@
 import { sessionRouter } from "./routers/session";
 import { scheduleRouter } from "./routers/schedule";
+import { patientRouter } from "./routers/patient";
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
