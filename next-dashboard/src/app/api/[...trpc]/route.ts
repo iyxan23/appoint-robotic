@@ -1,7 +1,7 @@
-import { createOpenApiNextAppHandler } from "next-trpc-openapi";
 import type { NextRequest } from "next/server";
 import { appRouter } from "~/server/api/root";
 import { createTRPCContext } from "~/server/api/trpc";
+import { createOpenApiFetchHandler } from "./trpc-openapi-fetch-handler";
 
 const createContext = async ({
   req,
@@ -32,19 +32,21 @@ const createContext = async ({
   });
 };
 
-const handler = createOpenApiNextAppHandler({
-  router: appRouter,
-  createContext,
-  responseMeta: undefined,
-  onError:
-      () => {
-          // console.error(
-          //   `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
-          // );
-          console.error(
-            '❌ tRPC failed an OpenAPI next handler; unable to get information.',
-          );
-        }
-});
+const handler = (req: NextRequest) => {
+  return createOpenApiFetchHandler({
+    endpoint: "/api",
+    router: appRouter,
+    createContext: ({ resHeaders }) => createContext({ req, resHeaders }),
+    req,
+  });
+};
 
-export { handler as GET, handler as POST };
+export {
+  handler as GET,
+  handler as POST,
+  handler as PUT,
+  handler as PATCH,
+  handler as DELETE,
+  handler as OPTIONS,
+  handler as HEAD,
+};
