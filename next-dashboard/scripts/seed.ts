@@ -66,20 +66,22 @@ async function main() {
         let newHour = hour + choice([1, 2, 3]);
         if (hourEnd < newHour) newHour = hourEnd;
 
-        const type = choice(["break", "appointment"]);
-        await db.insert(schedule).values({
-          dateYear: getYear(thisDay),
-          dateMonth: getMonth(thisDay),
-          dateDay: getDate(thisDay),
-          startHour: hour,
-          startMinute: 0,
-          endHour: newHour,
-          endMinute: 0,
-          isBreak: type === "break",
-          patientId: type === "appointment" ? choice(patients).id : null,
-          title: type === "appointment" ? `appointment ${day}` : null,
-          status: "appointed",
-        });
+        const type = choice(["break", "appointment", "empty"]);
+        if (type !== "empty") {
+          await db.insert(schedule).values({
+            dateYear: getYear(thisDay),
+            dateMonth: getMonth(thisDay),
+            dateDay: getDate(thisDay),
+            startHour: hour,
+            startMinute: 0,
+            endHour: newHour,
+            endMinute: 0,
+            isBreak: type === "break",
+            patientId: type === "appointment" ? choice(patients).id : null,
+            title: type === "appointment" ? `appointment ${day}` : null,
+            status: "appointed",
+          });
+        }
         console.log(
           `inserted ${type} on ${format(
             thisDay,
