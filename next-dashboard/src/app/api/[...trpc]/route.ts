@@ -38,6 +38,10 @@ const handler = (req: NextRequest) => {
     router: appRouter,
     createContext: ({ resHeaders }) => createContext({ req, resHeaders }),
     req,
+    onError: ({ error }) => {
+      console.error(`❌ tRPC failed on ${req.url}: ${error.message}`);
+      if (error.stack) console.error(error.stack);
+    }
   });
 };
 
