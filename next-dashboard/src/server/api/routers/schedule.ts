@@ -312,6 +312,13 @@ export const scheduleRouter = createTRPCRouter({
           hour = end.hour;
         }
 
+        if (hour < WORK_END_HOUR) {
+          emptyHoursThisDay.push({
+            start: { hour, minute: 0 },
+            end: { hour: WORK_END_HOUR, minute: 0 },
+          });
+        }
+
         const thisDay = addDays(tomorrow, nthDay);
         emptyTimes.push({
           date: {
