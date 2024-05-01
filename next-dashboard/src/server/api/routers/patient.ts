@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure } from "../trpc";
+import { createTRPCRouter, publicProcedure, userProcedure } from "../trpc";
 import { contextSetSession, schemaSession } from "~/server/session";
 import { eq } from "drizzle-orm";
 import { patient } from "~/server/db/schema";
 import { compare, hashSync } from "bcryptjs";
 import { cache } from "react";
 import { PATIENT_TAG } from "./_tags";
+import { schemaPatient } from "~/lib/schemas/patient";
 
 export const patientRouter = createTRPCRouter({
   login: publicProcedure
@@ -46,7 +47,11 @@ export const patientRouter = createTRPCRouter({
 
   register: publicProcedure
     .meta({
-      openapi: { method: "POST", path: "/patient/register", tags: [PATIENT_TAG] },
+      openapi: {
+        method: "POST",
+        path: "/patient/register",
+        tags: [PATIENT_TAG],
+      },
     })
     .input(z.object({ username: z.string(), password: z.string() }))
     .output(
@@ -85,6 +90,18 @@ export const patientRouter = createTRPCRouter({
       await contextSetSession(ctx, session);
 
       return { success: true, session };
+    }),
+
+  listPatients: userProcedure
+    .meta({
+      openapi: { method: "GET", path: "/patient/list", tags: [PATIENT_TAG] },
+    })
+    .input(z.undefined())
+    .output(schemaPatient.array())
+    .query(({ ctx }) => {
+      return ctx.db
+        .select({ id: patient.id, username: patient.username })
+        .from(patient);
     }),
 });
 

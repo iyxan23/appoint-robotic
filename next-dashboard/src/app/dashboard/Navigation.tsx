@@ -27,7 +27,7 @@ const navigation = [
   {
     title: "Patients",
     icon: () => <UsersIcon className="h-4 w-4"/>,
-    href: "/dashboard/patients"
+    href: "/dashboard/patient"
   }
 ]
 
