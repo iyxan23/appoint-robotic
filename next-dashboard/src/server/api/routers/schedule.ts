@@ -95,9 +95,17 @@ export const scheduleRouter = createTRPCRouter({
 
       const dbSchedules = await ctx.db.query.schedule.findMany({
         where: wher,
+        with: {
+          patient: true,
+        },
       });
 
-      return dbSchedules.map((ds) => convertDbScheduleToSchedule(ds));
+      return dbSchedules.map(({ patient, ...ds }) =>
+        convertDbScheduleToSchedule(
+          ds,
+          patient ? { id: patient.id, name: patient.username } : undefined,
+        ),
+      );
     }),
 
   createSchedule: userProcedure
