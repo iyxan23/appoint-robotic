@@ -345,7 +345,7 @@ export const scheduleRouter = createTRPCRouter({
     })
     .input(
       schemaScheduleAppointment
-        .omit({ id: true, status: true, type: true })
+        .omit({ id: true, status: true, type: true, patient: true })
         .merge(schemaDate),
     )
     .output(schemaSchedule)
@@ -380,7 +380,7 @@ export const scheduleRouter = createTRPCRouter({
 
           isBreak: false,
 
-          patientId: input.patient.id,
+          patientId: ctx.session.id,
           title: input.title,
           status: "appointed",
         })
@@ -393,7 +393,10 @@ export const scheduleRouter = createTRPCRouter({
           message: "unable to appoint the schedule as requested",
         });
 
-      return convertDbScheduleToSchedule(newSchedule);
+      return convertDbScheduleToSchedule(newSchedule, {
+        id: ctx.session.id,
+        name: ctx.session.username,
+      });
     }),
 });
 
@@ -403,25 +406,25 @@ function convertDbScheduleToSchedule(
 ): z.infer<typeof schemaSchedule> & { date: z.infer<typeof schemaDate> } {
   return ds.isBreak
     ? {
-      type: "break",
-      date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
-      id: ds.id,
+        type: "break",
+        date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
+        id: ds.id,
 
-      start: { hour: ds.startHour, minute: ds.startMinute },
-      end: { hour: ds.endHour, minute: ds.endMinute },
-    }
+        start: { hour: ds.startHour, minute: ds.startMinute },
+        end: { hour: ds.endHour, minute: ds.endMinute },
+      }
     : {
-      type: "appointment",
-      date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
-      id: ds.id,
+        type: "appointment",
+        date: { year: ds.dateYear, month: ds.dateMonth, day: ds.dateDay },
+        id: ds.id,
 
-      start: { hour: ds.startHour, minute: ds.startMinute },
-      end: { hour: ds.endHour, minute: ds.endMinute },
+        start: { hour: ds.startHour, minute: ds.startMinute },
+        end: { hour: ds.endHour, minute: ds.endMinute },
 
-      patient: patient ?? { name: "Unknown patient", id: 1 }, // TODO - should've done a null assertion check but that'd be a bit too overkill
-      title: ds.title ?? "Unknown title",
-      status: ds.status ?? "finished",
-    };
+        patient: patient ?? { name: "Unknown patient", id: 1 }, // TODO - should've done a null assertion check but that'd be a bit too overkill
+        title: ds.title ?? "Unknown title",
+        status: ds.status ?? "finished",
+      };
 }
 
 function nestSchedules(
