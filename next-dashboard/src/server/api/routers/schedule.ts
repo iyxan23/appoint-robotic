@@ -13,13 +13,16 @@ import { and, between, eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { schedule } from "~/server/db/schema";
 import {
+  addDays,
   addWeeks,
   endOfDay,
   getDate,
   getMonth,
   getYear,
   startOfDay,
+  subDays,
 } from "date-fns";
+import { WORK_END_HOUR, WORK_START_HOUR } from "~/lib/constants";
 
 export const scheduleRouter = createTRPCRouter({
   listSchedules: userProcedure
@@ -237,24 +240,27 @@ export const scheduleRouter = createTRPCRouter({
       },
     })
     .input(z.undefined())
-    .output(z.array(z.array(z.object({ start: schemaTime, end: schemaTime }))))
+    .output(
+      z.array(
+        z.object({
+          date: schemaDate,
+          emptyTimes: z.array(z.object({ start: schemaTime, end: schemaTime })),
+        }),
+      ),
+    )
     .query(async ({ ctx }) => {
       // gets the schedules one week ahead
-      const today = startOfDay(new Date());
-      const oneWeekAhead = endOfDay(addWeeks(today, 1));
+      // not including today (that's why the addDays 1)
+      const tomorrow = addDays(startOfDay(new Date()), 1);
+      const oneWeekAhead = subDays(endOfDay(addWeeks(tomorrow, 1)), 1);
       const start =
-        getYear(today) * 10000 + getMonth(today) * 100 + getDate(today);
+        getYear(tomorrow) * 10000 +
+        getMonth(tomorrow) * 100 +
+        getDate(tomorrow);
       const end =
         getYear(oneWeekAhead) * 10000 +
         getMonth(oneWeekAhead) * 100 +
         getDate(oneWeekAhead);
-
-      if (end < start) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: "range.start should not be larger than range.end",
-        });
-      }
 
       const wher = between(
         sql`${schedule.dateYear} * 10000 + ${schedule.dateMonth} * 100 + ${schedule.dateDay}`,
@@ -264,23 +270,62 @@ export const scheduleRouter = createTRPCRouter({
 
       const schedules = await ctx.db.query.schedule.findMany({ where: wher });
 
-      const result: {
+      const filledWithSchedule: {
         start: z.infer<typeof schemaTime>;
         end: z.infer<typeof schemaTime>;
       }[][] = Array.from({ length: 7 }).map(() => []);
 
       for (const s of schedules) {
-        const date = s.dateYear * 100000 + s.dateMonth * 100 + s.dateDay;
+        const date = s.dateYear * 10000 + s.dateMonth * 100 + s.dateDay;
         const dateRelativeToWeek = date - start;
 
-        // biome-ignore lint/style/noNonNullAssertion: we know that dateRelativeToWeek is not null
-        result[dateRelativeToWeek]!.push({
+        // biome-ignore lint/style/noNonNullAssertion: it shouldn't be
+        filledWithSchedule[dateRelativeToWeek]!.push({
           start: { hour: s.startHour, minute: s.startMinute },
           end: { hour: s.endHour, minute: s.endMinute },
         });
       }
 
-      return result;
+      // find the times in filledWithSchedule that is empty, starting from WORK_START_HOUR to WORK_END_HOUR
+
+      const emptyTimes: {
+        date: z.infer<typeof schemaDate>;
+        emptyTimes: {
+          start: z.infer<typeof schemaTime>;
+          end: z.infer<typeof schemaTime>;
+        }[];
+      }[] = [];
+      let nthDay = 0;
+
+      for (const day of filledWithSchedule) {
+        const emptyHoursThisDay = [];
+        let hour = WORK_START_HOUR;
+
+        for (const { start, end } of day) {
+          if (start.hour > hour) {
+            emptyHoursThisDay.push({
+              start: { hour, minute: 0 },
+              end: { hour: start.hour, minute: 0 },
+            });
+          }
+
+          hour = end.hour;
+        }
+
+        const thisDay = addDays(tomorrow, nthDay);
+        emptyTimes.push({
+          date: {
+            year: getYear(thisDay),
+            month: getMonth(thisDay),
+            day: getDate(thisDay),
+          },
+          emptyTimes: emptyHoursThisDay,
+        });
+
+        nthDay++;
+      }
+
+      return emptyTimes;
     }),
 });
 

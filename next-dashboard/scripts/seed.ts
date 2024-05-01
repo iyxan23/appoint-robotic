@@ -12,6 +12,7 @@ import {
   subWeeks,
 } from "date-fns";
 import { patient, schedule } from "../src/server/db/schema";
+import { WORK_END_HOUR, WORK_START_HOUR } from "~/lib/constants";
 
 // yeah these are kinda weird
 (await import("dotenv")).config();
@@ -56,15 +57,12 @@ async function main() {
     const startDate = subWeeks(today, 4);
     const endDate = addWeeks(today, 4);
 
-    const hourStart = 8;
-    const hourEnd = 17;
-
     for (let day = 0; day < differenceInDays(endDate, startDate); day++) {
       const thisDay = addDays(startDate, day);
-      let hour = hourStart;
-      while (hour < hourEnd) {
+      let hour = WORK_START_HOUR;
+      while (hour < WORK_END_HOUR) {
         let newHour = hour + choice([1, 2, 3]);
-        if (hourEnd < newHour) newHour = hourEnd;
+        if (WORK_END_HOUR < newHour) newHour = WORK_END_HOUR;
 
         const type = choice(["break", "appointment", "empty"]);
         if (type !== "empty") {
