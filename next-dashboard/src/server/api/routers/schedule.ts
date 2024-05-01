@@ -123,8 +123,8 @@ export const scheduleRouter = createTRPCRouter({
       z.discriminatedUnion("type", [
         schemaScheduleAppointment
           .omit({ id: true, status: true })
-          .extend({ date: schemaDate }),
-        schemaScheduleBreak.omit({ id: true }).extend({ date: schemaDate }),
+          .merge(schemaDate),
+        schemaScheduleBreak.omit({ id: true }).merge(schemaDate),
       ]),
     )
     .output(schemaSchedule)
@@ -147,9 +147,9 @@ export const scheduleRouter = createTRPCRouter({
       const createdSchedule = await ctx.db
         .insert(schedule)
         .values({
-          dateYear: input.date.year,
-          dateMonth: input.date.month,
-          dateDay: input.date.day,
+          dateYear: input.year,
+          dateMonth: input.month,
+          dateDay: input.day,
 
           startHour: input.start.hour,
           startMinute: input.start.minute,
@@ -326,6 +326,67 @@ export const scheduleRouter = createTRPCRouter({
       }
 
       return emptyTimes;
+    }),
+
+  appointSchedule: patientProcedure
+    .meta({
+      openapi: {
+        method: "POST",
+        path: "/schedule/appoint",
+        tags: [SCHEDULE_TAG],
+      },
+    })
+    .input(
+      schemaScheduleAppointment
+        .omit({ id: true, status: true, type: true })
+        .merge(schemaDate),
+    )
+    .output(schemaSchedule)
+    .mutation(async ({ input, ctx }) => {
+      // TODO
+      // might be a good idea to do some checking to make sure the new schedule
+      // doesn't overlap with other schedules.
+      //
+      // maybe doing something like this might work:
+      //    SELECT COUNT(*)
+      //    FROM schedule s
+      //    WHERE
+      //      ${startHour * 100 + startMinutes} BETWEEN
+      //        s.startHour * 100 + s.startMinutes AND
+      //        s.endHour * 100 + s.endMinutes
+      //      OR
+      //      ${endHour * 100 + endMinutes} BETWEEN
+      //        s.startHour * 100 + s.startMinutes AND
+      //        s.endHour * 100 + s.endMinutes
+      const createdSchedule = await ctx.db
+        .insert(schedule)
+        .values({
+          dateYear: input.year,
+          dateMonth: input.month,
+          dateDay: input.day,
+
+          startHour: input.start.hour,
+          startMinute: input.start.minute,
+
+          endHour: input.end.hour,
+          endMinute: input.end.minute,
+
+          isBreak: false,
+
+          patientId: input.patient.id,
+          title: input.title,
+          status: "appointed",
+        })
+        .returning();
+
+      const newSchedule = createdSchedule[0];
+      if (!newSchedule)
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "unable to appoint the schedule as requested",
+        });
+
+      return convertDbScheduleToSchedule(newSchedule);
     }),
 });
 
