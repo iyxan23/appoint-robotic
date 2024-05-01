@@ -1,7 +1,7 @@
 import { api } from "~/trpc/server";
 
 export default async function WelcomeBack() {
-  const session = await api.session.getSession();
+  const session = await api.session.getSession.query();
 
   if (!session) throw new Error("Session must not be null");
 

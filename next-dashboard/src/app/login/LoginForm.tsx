@@ -27,7 +27,7 @@ export default function LoginForm() {
   });
 
   const { refresh } = useRouter();
-  const { mutate, isPending } = api.session.login.useMutation({
+  const { mutate, isLoading: isPending } = api.session.login.useMutation({
     onSuccess: (res) => {
       if (res.success) {
         refresh();

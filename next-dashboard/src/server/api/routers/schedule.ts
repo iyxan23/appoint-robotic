@@ -23,9 +23,9 @@ import {
 
 export const scheduleRouter = createTRPCRouter({
   listSchedules: userProcedure
-    .meta({
-      openapi: { method: "GET", path: "/schedule/list", tags: [SCHEDULE_TAG] },
-    })
+    // .meta({
+    //   openapi: { method: "GET", path: "/schedule/list", tags: [SCHEDULE_TAG] },
+    // })
     .input(
       z.object({ range: z.object({ start: schemaDate, end: schemaDate }) }),
     )
@@ -101,13 +101,13 @@ export const scheduleRouter = createTRPCRouter({
     }),
 
   createSchedule: userProcedure
-    .meta({
-      openapi: {
-        method: "POST",
-        path: "/schedule/create",
-        tags: [SCHEDULE_TAG],
-      },
-    })
+    // .meta({
+    //   openapi: {
+    //     method: "POST",
+    //     path: "/schedule/create",
+    //     tags: [SCHEDULE_TAG],
+    //   },
+    // })
     .input(
       z.discriminatedUnion("type", [
         schemaScheduleAppointment
