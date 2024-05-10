@@ -1,12 +1,19 @@
 import { z } from "zod";
-import { createTRPCRouter, publicProcedure, userProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  patientProcedure,
+  publicProcedure,
+  userProcedure,
+} from "../trpc";
 import { contextSetSession, schemaSession } from "~/server/session";
 import { eq } from "drizzle-orm";
-import { patient } from "~/server/db/schema";
+import { patient, schedule } from "~/server/db/schema";
 import { compare, hashSync } from "bcryptjs";
 import { cache } from "react";
 import { PATIENT_TAG } from "./_tags";
 import { schemaPatient } from "~/lib/schemas/patient";
+import { schemaSchedule, schemaScheduleAppointment } from "~/lib/schemas/schedule";
+import { convertDbScheduleToSchedule } from "./schedule";
 
 export const patientRouter = createTRPCRouter({
   login: publicProcedure
@@ -102,6 +109,26 @@ export const patientRouter = createTRPCRouter({
       return ctx.db
         .select({ id: patient.id, username: patient.username })
         .from(patient);
+    }),
+
+  listAppointments: patientProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/patient/appointments",
+        tags: [PATIENT_TAG],
+      },
+    })
+    .input(z.undefined())
+    .output(schemaSchedule.array())
+    .query(async ({ ctx }) => {
+      const patientId = ctx.session.id;
+
+      const schedules = await ctx.db.query.schedule.findMany({
+        where: eq(schedule.patientId, patientId),
+      });
+
+      return schedules.map((s) => convertDbScheduleToSchedule(s, { id: patientId, name: ctx.session.username }));
     }),
 });
 
