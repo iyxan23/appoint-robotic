@@ -13,6 +13,7 @@ import { ZodError } from "zod";
 
 import { db } from "~/server/db";
 import { SESSION_COOKIE, schemaSession, unsealData } from "../session";
+import { notifier } from "../notifier";
 
 export type Cookies = {
   setCookie: (name: string, value: string, attributes?: string) => void;
@@ -21,6 +22,7 @@ export type Cookies = {
 };
 
 export type TRPCContext = {
+  notifier: typeof notifier;
   db: typeof db;
   reqHeaders: Headers;
   cookies: Cookies;
@@ -43,6 +45,7 @@ export const createTRPCContext = (opts: {
   cookies: Cookies;
 }): TRPCContext => {
   return {
+    notifier,
     db,
     reqHeaders: opts.headers,
     cookies: opts.cookies,
@@ -104,8 +107,8 @@ export const withSessionProcedure = t.procedure.use(async (opts) => {
   const sessionCookie = opts.ctx.cookies.getCookie(SESSION_COOKIE);
   const session = sessionCookie
     ? await schemaSession
-        .parseAsync(await unsealData(sessionCookie))
-        .catch(() => null)
+      .parseAsync(await unsealData(sessionCookie))
+      .catch(() => null)
     : null;
 
   return opts.next({

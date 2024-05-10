@@ -172,6 +172,12 @@ export const scheduleRouter = createTRPCRouter({
           message: "unable to create the schedule as requested",
         });
 
+      await ctx.notifier.sendScheduleUpdate({
+        year: newSchedule.dateYear,
+        month: newSchedule.dateMonth,
+        day: newSchedule.dateDay,
+      });
+
       return convertDbScheduleToSchedule(newSchedule);
     }),
 
@@ -200,6 +206,12 @@ export const scheduleRouter = createTRPCRouter({
         });
       }
 
+      await ctx.notifier.sendScheduleUpdate({
+        year: deletedSchedule.dateYear,
+        month: deletedSchedule.dateMonth,
+        day: deletedSchedule.dateDay,
+      });
+
       return convertDbScheduleToSchedule(deletedSchedule);
     }),
 
@@ -227,6 +239,12 @@ export const scheduleRouter = createTRPCRouter({
           message: `no schedule with id ${input.id} found`,
         });
       }
+
+      await ctx.notifier.sendScheduleUpdate({
+        year: updatedSchedule.dateYear,
+        month: updatedSchedule.dateMonth,
+        day: updatedSchedule.dateDay,
+      });
 
       return convertDbScheduleToSchedule(updatedSchedule);
     }),
@@ -268,7 +286,10 @@ export const scheduleRouter = createTRPCRouter({
         end,
       );
 
-      const schedules = await ctx.db.query.schedule.findMany({ where: wher, orderBy: [asc(schedule.startHour)] });
+      const schedules = await ctx.db.query.schedule.findMany({
+        where: wher,
+        orderBy: [asc(schedule.startHour)],
+      });
 
       const filledWithSchedule: {
         start: z.infer<typeof schemaTime>;
@@ -387,11 +408,18 @@ export const scheduleRouter = createTRPCRouter({
         .returning();
 
       const newSchedule = createdSchedule[0];
-      if (!newSchedule)
+      if (!newSchedule) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "unable to appoint the schedule as requested",
         });
+      }
+
+      await ctx.notifier.sendScheduleUpdate({
+        year: newSchedule.dateYear,
+        month: newSchedule.dateMonth,
+        day: newSchedule.dateDay,
+      });
 
       return convertDbScheduleToSchedule(newSchedule, {
         id: ctx.session.id,

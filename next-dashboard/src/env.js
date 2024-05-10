@@ -13,6 +13,8 @@ export const env = createEnv({
       .default("development"),
     IRON_SESSION_PASSWORD: z.string(),
     SESSION_MAX_AGE: z.coerce.number().optional(),
+    SCHEDULE_STREAM_HOST: z.string(),
+    SCHEDULE_STREAM_SECRET: z.string(),
   },
 
   /**
@@ -34,6 +36,8 @@ export const env = createEnv({
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
     IRON_SESSION_PASSWORD: process.env.IRON_SESSION_PASSWORD,
     SESSION_MAX_AGE: process.env.SESSION_MAX_AGE,
+    SCHEDULE_STREAM_HOST: process.env.SCHEDULE_STREAM_HOST,
+    SCHEDULE_STREAM_SECRET: process.env.SCHEDULE_STREAM_SECRET,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
