@@ -6,14 +6,18 @@ import {
   userProcedure,
 } from "../trpc";
 import { contextSetSession, schemaSession } from "~/server/session";
-import { eq } from "drizzle-orm";
-import { patient, schedule } from "~/server/db/schema";
+import { and, eq } from "drizzle-orm";
+import { checkin, patient, schedule } from "~/server/db/schema";
 import { compare, hashSync } from "bcryptjs";
 import { cache } from "react";
 import { PATIENT_TAG } from "./_tags";
 import { schemaPatient } from "~/lib/schemas/patient";
-import { schemaSchedule, schemaScheduleAppointment } from "~/lib/schemas/schedule";
+import {
+  schemaSchedule,
+  schemaScheduleAppointment,
+} from "~/lib/schemas/schedule";
 import { convertDbScheduleToSchedule } from "./schedule";
+import { TRPCError } from "@trpc/server";
 
 export const patientRouter = createTRPCRouter({
   login: publicProcedure
@@ -128,7 +132,57 @@ export const patientRouter = createTRPCRouter({
         where: eq(schedule.patientId, patientId),
       });
 
-      return schedules.map((s) => convertDbScheduleToSchedule(s, { id: patientId, name: ctx.session.username }));
+      return schedules.map((s) =>
+        convertDbScheduleToSchedule(s, {
+          id: patientId,
+          name: ctx.session.username,
+        }),
+      );
+    }),
+
+  getCheckInID: patientProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/patient/checkin",
+        tags: [PATIENT_TAG],
+      },
+    })
+    .input(z.object({ scheduleId: z.number() }))
+    .output(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // check if schedule is at least 15 mins before new Date();
+      const theSchedule = await ctx.db.query.schedule.findFirst({
+        where: and(
+          eq(schedule.id, input.scheduleId),
+          eq(schedule.patientId, ctx.session.id),
+        ),
+      });
+
+      if (!theSchedule) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const now = new Date();
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+
+      const scheduleMins = theSchedule.startHour * 60 + theSchedule.startMinute;
+      const diff = nowMins - scheduleMins;
+
+      if (-diff > 15 || diff > 0) {
+        throw new TRPCError({ code: "BAD_REQUEST" });
+      }
+
+      const newCheckIn = await ctx.db
+        .insert(checkin)
+        .values({
+          patientId: ctx.session.id,
+          scheduleId: input.scheduleId,
+          id: new Crypto().randomUUID(),
+        }).returning();
+
+      // biome-ignore lint/style/noNonNullAssertion: shouldn't be null, because we had just inserted it
+      return { id: newCheckIn[0]!.id };
     }),
 });
 

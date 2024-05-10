@@ -84,3 +84,25 @@ export const posts = createTable(
     nameIndex: index("name_idx").on(example.name),
   }),
 );
+
+export const checkin = createTable("checkin", {
+  // uuid
+  id: text("id", { length: 36 }).primaryKey(),
+
+  patientId: int("patient_id"),
+  scheduleId: int("schedule_id"),
+});
+
+export const checkinPatientRelations = relations(checkin, ({ one }) => ({
+  patient: one(patient, {
+    fields: [checkin.patientId],
+    references: [patient.id],
+  }),
+}));
+
+export const checkinScheduleRelations = relations(checkin, ({ one }) => ({
+  schedule: one(schedule, {
+    fields: [checkin.scheduleId],
+    references: [schedule.id],
+  }),
+}));
