@@ -9,7 +9,7 @@ import {
   schemaScheduleStatus,
   schemaTime,
 } from "~/lib/schemas/schedule";
-import { and, between, eq, sql } from "drizzle-orm";
+import { and, asc, between, eq, sql } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { schedule } from "~/server/db/schema";
 import {
@@ -268,7 +268,7 @@ export const scheduleRouter = createTRPCRouter({
         end,
       );
 
-      const schedules = await ctx.db.query.schedule.findMany({ where: wher });
+      const schedules = await ctx.db.query.schedule.findMany({ where: wher, orderBy: [asc(schedule.startHour)] });
 
       const filledWithSchedule: {
         start: z.infer<typeof schemaTime>;
