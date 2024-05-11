@@ -240,11 +240,12 @@ export const scheduleRouter = createTRPCRouter({
         });
       }
 
-      await ctx.notifier.sendScheduleUpdate({
-        year: updatedSchedule.dateYear,
-        month: updatedSchedule.dateMonth,
-        day: updatedSchedule.dateDay,
-      });
+      if (updatedSchedule.status !== "appointed" && updatedSchedule.status !== null) {
+        await ctx.notifier.sendCheckInUpdate({
+          id: updatedSchedule.id,
+          status: updatedSchedule.status,
+        });
+      }
 
       return convertDbScheduleToSchedule(updatedSchedule);
     }),

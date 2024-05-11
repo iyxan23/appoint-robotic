@@ -15,4 +15,5 @@ export const schemaCheckInUpdate = z.object({
     z.literal("in-progress"),
     z.literal("finished"),
   ]),
+  patientId: z.number()
 });

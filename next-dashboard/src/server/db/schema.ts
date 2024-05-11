@@ -52,6 +52,7 @@ export const schedule = createTable("schedule", {
   // if isBreak is true, then the fields below is_break shall be null, and otherwise
   isBreak: int("is_break", { mode: "boolean" }).notNull(),
 
+  // will be null if isBreak is true
   patientId: int("patient_id"),
   title: text("title", { length: 256 }),
   status: text("status", {
@@ -89,8 +90,8 @@ export const checkin = createTable("checkin", {
   // uuid
   id: text("id", { length: 36 }).primaryKey(),
 
-  patientId: int("patient_id"),
-  scheduleId: int("schedule_id"),
+  patientId: int("patient_id").notNull(),
+  scheduleId: int("schedule_id").notNull(),
 });
 
 export const checkinPatientRelations = relations(checkin, ({ one }) => ({

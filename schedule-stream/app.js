@@ -1,18 +1,18 @@
-import express from 'express';
-import { nanoid } from 'nanoid';
-import { createServer } from 'node:http';
+import express from "express";
+import { nanoid } from "nanoid";
+import { createServer } from "node:http";
 import { Server } from "socket.io";
-import { schemaScheduleUpdate } from "./schemas.js";
+import { schemaCheckInUpdate, schemaScheduleUpdate } from "./schemas.js";
 import { createHash } from "node:crypto";
 import { config } from "dotenv";
 
 config();
 
-const app = express()
+const app = express();
 const server = createServer(app);
 
 const io = new Server(server);
-const port = process.env["PORT"] || 3333
+const port = process.env["PORT"] || 3333;
 
 if (!process.env["SECRET"]) {
   throw new Error("SECRET is not provided");
@@ -20,12 +20,12 @@ if (!process.env["SECRET"]) {
 
 const SECRET = process.env["SECRET"];
 
-app.use(express.json())
+app.use(express.json());
 
 app.get("/", (req, res) => {
   res.write("Hello world!");
   res.end();
-})
+});
 
 const listeners = {};
 
@@ -38,8 +38,17 @@ function sendDataToUsers(data) {
   }
 }
 
+function sendDataToPatient(data, patientId) {
+  for (const id in listeners) {
+    if (listeners[id].patientId === patientId) {
+      listeners[id].emit(data);
+    }
+  }
+}
+
 function hash(input) {
-  return createHash('sha256').update(input, 'binary').digest('hex');
+  return createHash("sha256").update(input, "binary").digest("hex");
+}
 
 async function verifyToken(token) {
   const payload = { token, nonce: nanoid() };
@@ -59,7 +68,7 @@ async function verifyToken(token) {
   ).then((res) => res.json());
 }
 
-io.on('connection', (socket) => {
+io.on("connection", (socket) => {
   const id = nanoid();
   console.log(`Client connected: ${id}`);
 
@@ -102,12 +111,36 @@ io.on('connection', (socket) => {
   });
 });
 
-app.post('/broadcast/scheduleUpdate', async (req, res) => {
+app.post("/broadcast/scheduleUpdate", async (req, res) => {
   let parsed;
   try {
     parsed = await schemaScheduleUpdate.parseAsync(req.body);
   } catch (e) {
-    res.status(400).json({ status: "err", message: "Invalid request" })
+    res.status(400).json({ status: "err", message: "Invalid request" });
+    return;
+  }
+
+  // verify challange
+  const challangeResp = parsed.challange;
+  const reqBody = JSON.stringify({ ...parsed, challange: undefined });
+
+  const challangePassed = challangeResp === hash(reqBody + SECRET);
+
+  if (!challangePassed) {
+    res.status(400).json({ status: "err", message: "Challange failed" });
+    return;
+  }
+
+  sendDataToUsers({ type: "scheduleUpdate", data: parsed });
+  res.status(200).json({ status: "ok", message: "sent" });
+});
+
+app.post("/broadcast/checkInUpdate", async (req, res) => {
+  let parsed;
+  try {
+    parsed = await schemaCheckInUpdate.parseAsync(req.body);
+  } catch (e) {
+    res.status(400).json({ status: "err", message: "Invalid request" });
     return;
   }
 
@@ -123,9 +156,11 @@ app.post('/broadcast/scheduleUpdate', async (req, res) => {
   }
 
   sendDataToUsers({ type: "checkInUpdate", data: parsed });
+  sendDataToPatient({ type: "checkInUpdate", data: parsed }, parsed.patientId);
+
   res.status(200).json({ status: "ok", message: "sent" });
-})
+});
 
 server.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
+  console.log(`Example app listening on port ${port}`);
 });

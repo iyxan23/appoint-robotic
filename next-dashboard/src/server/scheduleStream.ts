@@ -4,7 +4,26 @@ export class ScheduleStream {
   constructor(
     private readonly host: string,
     private readonly secret: string,
-  ) {}
+  ) { }
+
+  async sendCheckInUpdate(
+    schedule: {
+      id: number;
+      status: "checked-in" | "in-progress" | "finished";
+    },
+    patientId: number,
+  ) {
+    return fetch(`${this.host}/broadcast/checkInUpdate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        schedule,
+        challange: this._challange(JSON.stringify({ ...schedule, patientId })),
+      }),
+    });
+  }
 
   async sendScheduleUpdate(schedule: {
     year: number;
