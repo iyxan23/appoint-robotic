@@ -15,6 +15,7 @@ export const env = createEnv({
     SESSION_MAX_AGE: z.coerce.number().optional(),
     SCHEDULE_STREAM_HOST: z.string(),
     SCHEDULE_STREAM_SECRET: z.string(),
+    NFC_READER_SECRET: z.string(),
   },
 
   /**
@@ -38,6 +39,7 @@ export const env = createEnv({
     SESSION_MAX_AGE: process.env.SESSION_MAX_AGE,
     SCHEDULE_STREAM_HOST: process.env.SCHEDULE_STREAM_HOST,
     SCHEDULE_STREAM_SECRET: process.env.SCHEDULE_STREAM_SECRET,
+    NFC_READER_SECRET: process.env.NFC_READER_SECRET,
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially

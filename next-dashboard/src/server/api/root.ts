@@ -1,6 +1,7 @@
 import { sessionRouter } from "./routers/session";
 import { scheduleRouter } from "./routers/schedule";
 import { patientRouter } from "./routers/patient";
+import { nfcRouter } from "./routers/nfc";
 import { scheduleStreamRouter } from "./routers/scheduleStream";
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
@@ -14,6 +15,7 @@ export const appRouter = createTRPCRouter({
   session: sessionRouter,
   schedule: scheduleRouter,
   patient: patientRouter,
+  nfc: nfcRouter,
   scheduleStream: scheduleStreamRouter
 });
 
