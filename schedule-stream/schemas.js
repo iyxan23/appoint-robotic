@@ -7,3 +7,12 @@ export const schemaScheduleUpdate = z.object({
 
   challange: z.string(),
 });
+
+export const schemaCheckInUpdate = z.object({
+  id: z.number(),
+  status: z.union([
+    z.literal("checked-in"),
+    z.literal("in-progress"),
+    z.literal("finished"),
+  ]),
+});

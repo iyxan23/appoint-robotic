@@ -29,27 +29,75 @@ app.get("/", (req, res) => {
 
 const listeners = {};
 
-function sendData(data) {
+function sendDataToUsers(data) {
   for (const id in listeners) {
-    listeners[id](data);
+    if (listeners[id].patientId) {
+      continue;
+    }
+    listeners[id].emit(data);
   }
 }
 
 function hash(input) {
   return createHash('sha256').update(input, 'binary').digest('hex');
+
+async function verifyToken(token) {
+  const payload = { token, nonce: nanoid() };
+
+  return fetch(
+    `${process.env["BACKEND_HOST"]}/api/open/scheduleStream/verifyToken`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...payload,
+        challange: hash(JSON.stringify(payload) + SECRET),
+      }),
+    },
+  ).then((res) => res.json());
 }
 
 io.on('connection', (socket) => {
   const id = nanoid();
   console.log(`Client connected: ${id}`);
 
-  listeners[id] = async (data) => {
-    console.log(`Emitting data: ${data}`);
-    socket.emit('data', data);
-  };
+  socket.on("login", (token) => {
+    console.log(`Login: ${token}`);
+    verifyToken(token).then((data) => {
+      if (data.valid) {
+        console.log(`login is valid: ${JSON.stringify(data)}`);
 
-  socket.on('disconnect', () => {
-    delete listeners[id];
+        if (data.kind.type === "user") {
+          listeners[id] = {
+            emit: async (data) => {
+              console.log(`Emitting data to user: ${data}`);
+              socket.emit("data", data);
+            },
+          };
+        } else {
+          listeners[id] = {
+            patientId: data.kind.id,
+            emit: async (data) => {
+              console.log(
+                `Emitting data to patient with id ${data.kind.id}: ${data}`,
+              );
+              socket.emit("data", data);
+            },
+          };
+        }
+      } else {
+        socket.disconnect(true);
+      }
+    });
+  });
+
+  socket.on("disconnect", () => {
+    if (listeners[id]) {
+      delete listeners[id];
+    }
+
     console.log(`Client disconnected: ${id}`);
   });
 });
@@ -74,7 +122,7 @@ app.post('/broadcast/scheduleUpdate', async (req, res) => {
     return;
   }
 
-  sendData({ type: "scheduleUpdate", data: parsed });
+  sendDataToUsers({ type: "checkInUpdate", data: parsed });
   res.status(200).json({ status: "ok", message: "sent" });
 })
 

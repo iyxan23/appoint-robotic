@@ -1,6 +1,7 @@
 import { sessionRouter } from "./routers/session";
 import { scheduleRouter } from "./routers/schedule";
 import { patientRouter } from "./routers/patient";
+import { scheduleStreamRouter } from "./routers/scheduleStream";
 
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
@@ -13,6 +14,7 @@ export const appRouter = createTRPCRouter({
   session: sessionRouter,
   schedule: scheduleRouter,
   patient: patientRouter,
+  scheduleStream: scheduleStreamRouter
 });
 
 // export type definition of API
