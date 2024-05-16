@@ -60,6 +60,11 @@ type ScheduleItem =
 
     start: Time;
     end: Time;
+  }
+  | {
+    type: "empty";
+    start: Time;
+    end: Time;
   };
 
 const columnHelper = createColumnHelper<ScheduleItem>();
@@ -155,13 +160,21 @@ export default function ScheduleTable({ data }: { data: ScheduleItem[] }) {
                     </TableCell>
                   ))}
                 </TableRow>
-              ) : (
+              ) : row.original.type === "break" ? (
                 <TableRow className="bg-muted hover:bg-muted">
                   <TableCell>
                     {formatTime(row.original.start)}-
                     {formatTime(row.original.end)}
                   </TableCell>
                   <TableCell colSpan={4}>Istirahat</TableCell>
+                </TableRow>
+              ) : (
+                <TableRow className="bg-muted hover:bg-muted">
+                  <TableCell>
+                    {formatTime(row.original.start)}-
+                    {formatTime(row.original.end)}
+                  </TableCell>
+                  <TableCell colSpan={4}>Kosong</TableCell>
                 </TableRow>
               ),
             )
@@ -183,22 +196,24 @@ function ActionDropdown({ scheduleId }: { scheduleId: number }) {
   const { mutate } = api.schedule.deleteSchedule.useMutation({
     onSuccess: () => {
       refresh();
-    }
+    },
   });
 
-  return <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" className="h-8 w-8 p-0">
-        <span className="sr-only">Buka menu</span>
-        <MoreHorizontal className="h-4 w-4" />
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuLabel>Aksi</DropdownMenuLabel>
-      <DropdownMenuItem onClick={() => mutate({ id: scheduleId })}>
-        Hapus
-      </DropdownMenuItem>
-      <DropdownMenuItem>View payment details</DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Buka menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Aksi</DropdownMenuLabel>
+        <DropdownMenuItem onClick={() => mutate({ id: scheduleId })}>
+          Hapus
+        </DropdownMenuItem>
+        <DropdownMenuItem>View payment details</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

@@ -16,6 +16,9 @@ export const env = createEnv({
     SCHEDULE_STREAM_HOST: z.string(),
     SCHEDULE_STREAM_SECRET: z.string(),
     NFC_READER_SECRET: z.string(),
+
+    TIME_FAKER_HOST: z.string(),
+    TIME_FAKER_USE: z.boolean()
   },
 
   /**
@@ -40,6 +43,9 @@ export const env = createEnv({
     SCHEDULE_STREAM_HOST: process.env.SCHEDULE_STREAM_HOST,
     SCHEDULE_STREAM_SECRET: process.env.SCHEDULE_STREAM_SECRET,
     NFC_READER_SECRET: process.env.NFC_READER_SECRET,
+
+    TIME_FAKER_HOST: process.env.TIME_FAKER_HOST,
+    TIME_FAKER_USE: process.env.TIME_FAKER_USE
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
