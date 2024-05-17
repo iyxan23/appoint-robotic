@@ -12,7 +12,7 @@ import {
   CardHeader,
 } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
-import { WORK_START_HOUR } from "~/lib/constants";
+import { WORK_END_HOUR, WORK_START_HOUR } from "~/lib/constants";
 import useStubbedNow from "~/lib/hooks/useStubbedNow";
 import type { schemaSchedule, schemaTime } from "~/lib/schemas/schedule";
 import { dateToScheduleDate } from "~/lib/utils";
@@ -255,15 +255,24 @@ function fillEmptyTimes(schedules: z.infer<typeof schemaSchedule>[]): (
   let lastHour = WORK_START_HOUR;
 
   for (const i of schedules) {
-    if (i.end.hour > lastHour) {
+    if (i.start.hour > lastHour) {
       result.push({
         type: "empty",
         start: { hour: lastHour, minute: 0 },
-        end: { hour: i.end.hour, minute: 0 },
+        end: { hour: i.start.hour, minute: 0 },
       });
+    } else {
+      result.push(i);
     }
-    result.push(i);
     lastHour = i.end.hour;
+  }
+
+  if (lastHour < WORK_END_HOUR) {
+    result.push({
+      type: "empty",
+      start: { hour: lastHour, minute: 0 },
+      end: { hour: WORK_END_HOUR, minute: 0 },
+    });
   }
 
   return result;
