@@ -2,8 +2,8 @@
 
 import { format, getHours, getMinutes } from "date-fns";
 import { Armchair, HeartHandshake, UserIcon } from "lucide-react";
-import { useMemo, useState } from "react";
-import type { z } from "zod";
+import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -32,12 +32,36 @@ export default function MainDashboardDisplay({
   const socket = useSocket();
 
   const today = dateToScheduleDate(now);
+  const utils = api.useUtils();
   const { data } = api.schedule.getSchedule.useQuery(today);
 
   const dataFilled = useMemo(
     () => (data ? fillEmptyTimes(data) : undefined),
     [data],
   );
+
+  useEffect(() => {
+    socket.on("scheduleUpdate", async (data) => {
+      const { year, month, day } = await z
+        .object({ year: z.number(), month: z.number(), day: z.number() })
+        .parseAsync(data);
+      utils.schedule.getSchedule.invalidate({ year, month, day });
+      utils.schedule.listSchedules.invalidate();
+    });
+
+    socket.on("checkInUpdate", async (data) => {
+      const { id } = await z
+        .object({
+          id: z.number(),
+        })
+        .parseAsync(data);
+
+      if (data.id === id) {
+        utils.schedule.getSchedule.invalidate(today);
+        utils.schedule.listSchedules.invalidate();
+      }
+    });
+  });
 
   // find the appropriate schedule for today
   const work = useMemo(() => {
@@ -63,10 +87,10 @@ export default function MainDashboardDisplay({
 
   return (
     <div className="flex flex-col gap-4">
-      <p>Tanggal {format(now, "yyyy MMM dd")}</p>
       <p>
-        Sekarang jam {getHours(now).toString().padStart(2, "0")}:
-        {getMinutes(now).toString().padStart(2, "0")}
+        {getHours(now).toString().padStart(2, "0")}:
+        {getMinutes(now).toString().padStart(2, "0")}{" "}
+        {format(now, "dd MMM yyyy")}{" "}
       </p>
       <Card>
         <CardHeader>Sekarang</CardHeader>
