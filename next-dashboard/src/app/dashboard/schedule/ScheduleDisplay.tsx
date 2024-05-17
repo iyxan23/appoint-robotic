@@ -20,6 +20,10 @@ import { dateToScheduleDate } from "~/lib/utils";
 import { api } from "~/trpc/react";
 import ScheduleTable from "../ScheduleTable";
 import { Skeleton } from "~/components/ui/skeleton";
+import { schemaSchedule, schemaTime } from "~/lib/schemas/schedule";
+import { z } from "zod";
+import { WORK_END_HOUR, WORK_START_HOUR } from "~/lib/constants";
+import { useMemo } from "react";
 
 const useSelectedDate = create<{ date: Date; setDate: (date: Date) => void }>(
   (set) => ({
@@ -47,12 +51,21 @@ export default function ScheduleDisplay() {
     range: { start: dateToScheduleDate(start), end: dateToScheduleDate(end) },
   });
 
-  const selectedDate = data?.[getYear(date)]?.[getMonth(date)]?.[
-    getDate(date)
-  ]?.map((schedule) =>
-    schedule.type === "appointment"
-      ? { ...schedule, patient: schedule.patient.name ?? "Unknown Patient" }
-      : { ...schedule },
+  const selectedDate = useMemo(() => data?.[getYear(date)]?.[getMonth(date)]?.[getDate(date)], [data, date]);
+
+  const filledSelectedDate = useMemo(
+    () => fillEmptyTimes(selectedDate ?? []),
+    [selectedDate],
+  );
+
+  const filledSelectedDateMapped = useMemo(
+    () =>
+      filledSelectedDate.map((schedule) =>
+        schedule.type === "appointment"
+          ? { ...schedule, patient: schedule.patient.name ?? "Unknown Patient" }
+          : { ...schedule },
+      ),
+    [filledSelectedDate],
   );
 
   return (
@@ -77,10 +90,53 @@ export default function ScheduleDisplay() {
               <Skeleton className="h-10" />
             </div>
           ) : (
-            <ScheduleTable data={selectedDate ?? []} />
+            <ScheduleTable data={filledSelectedDateMapped} />
           )}
         </article>
       </div>
     </>
   );
+}
+
+// this function will fill empty times with a schedule object with type "empty"
+function fillEmptyTimes(schedules: z.infer<typeof schemaSchedule>[]): (
+  | z.infer<typeof schemaSchedule>
+  | {
+    type: "empty";
+    start: z.infer<typeof schemaTime>;
+    end: z.infer<typeof schemaTime>;
+  }
+)[] {
+  const result: (
+    | z.infer<typeof schemaSchedule>
+    | {
+      type: "empty";
+      start: z.infer<typeof schemaTime>;
+      end: z.infer<typeof schemaTime>;
+    }
+  )[] = [];
+  let lastHour = WORK_START_HOUR;
+
+  for (const i of schedules) {
+    if (i.start.hour > lastHour) {
+      result.push({
+        type: "empty",
+        start: { hour: lastHour, minute: 0 },
+        end: { hour: i.start.hour, minute: 0 },
+      });
+    } else {
+      result.push(i);
+    }
+    lastHour = i.end.hour;
+  }
+
+  if (lastHour < WORK_END_HOUR) {
+    result.push({
+      type: "empty",
+      start: { hour: lastHour, minute: 0 },
+      end: { hour: WORK_END_HOUR, minute: 0 },
+    });
+  }
+
+  return result;
 }
