@@ -25,7 +25,8 @@ class _CheckInPageState extends State<CheckInPage> {
     }).then((value) async {
       await NfcHce.init(
         // as defined in apduservice.xml: A0 00 15 5A 70 01 D5
-        aid: Uint8List.fromList([0xA0, 0x00, 0x15, 0x5A, 0x70, 0x01, 0xD5]),
+        //aid: Uint8List.fromList([0xA0, 0x00, 0x15, 0x5A, 0x70, 0x01, 0xD5]),
+        aid: Uint8List.fromList([0xA0, 0xDA, 0xDA, 0xDA, 0xDA]),
 
         // next parameter determines whether APDU responses from the ports
         // on which the connection occurred will be deleted.
@@ -40,6 +41,10 @@ class _CheckInPageState extends State<CheckInPage> {
     }).then((value) {
       // probably provide the uuid's bytes
       NfcHce.addApduResponse(0, [0x00, 0x12, 0x34, 0x56, 0x78, 0x90]);
+
+      NfcHce.stream.listen((command) {
+	// some action here
+});
     });
   }
 
