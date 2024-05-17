@@ -1,4 +1,6 @@
-# Appoint
+<img align="right" src=".github/appoint-poster.png" width=400 />
+
+<h1><pre>Appoint</pre></h1>
 
 <p align="left">
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/raspberrypi/raspberrypi-original.svg" width=50 />
@@ -7,8 +9,6 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" width=50 />
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/flutter/flutter-original.svg" width=50 />
 </p>
-
-<img src=".github/appoint-poster.png" width=250 />
 
 Appoint is a system of IoT devices to make it easy to arrange medical appointments.
 
@@ -19,6 +19,10 @@ Appoint is a system of IoT devices to make it easy to arrange medical appointmen
 - [`flutter-app/`](flutter-app/) Flutter-powered mobile app to create appointments and emit NFC signals
 - [`schedule-stream/`](schedule-stream/) A simple express server that serves a Socket.IO endpoint to be used to notify subscribers of schedule change
 - [`time-faker/`](time-faker/) A simple express server that acts as a time provider that can be offsetted for testing
+
+## Dashboard Screenshots
+
+<img src=".github/appoint-dashbaord-homepage.png" /> <img src=".github/appoint-dashboard-schedules.png" />
 
 ## Flow
 
