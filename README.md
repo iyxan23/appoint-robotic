@@ -1,11 +1,11 @@
 # Appoint
 
 <p align="left">
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/raspberrypi/raspberrypi-original.svg" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" />
-  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/flutter/flutter-original.svg" />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/raspberrypi/raspberrypi-original.svg" width=50 />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" width=50 />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original.svg" width=50 />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" width=50 />
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/flutter/flutter-original.svg" width=50 />
 </p>
 
 Appoint is a system of IoT devices to make it easy to arrange medical appointments.
@@ -13,7 +13,7 @@ Appoint is a system of IoT devices to make it easy to arrange medical appointmen
 ## Batteries Included
 
 - [`next-dashboard/`](next-dashboard/) Next.js-powered dashboard and backend
-- [`nfc-backend/`](nfc-backend/) NFC reader backend code on the RPI with python
+- [`nfc-backend/`](nfc-backend/) NFC reader backend code on the RPI with python, connects with PN532 via i2c
 - [`flutter-app/`](flutter-app/) Flutter-powered mobile app to create appointments and emit NFC signals
 - [`schedule-stream/`](schedule-stream/) A simple express server that serves a Socket.IO endpoint to be used to notify subscribers of schedule change
 - [`time-faker/`](time-faker/) A simple express server that acts as a time provider that can be offsetted for testing
