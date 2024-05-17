@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
 });
 
 function sendDataToUsers(data) {
-  socket.to('user').emit(data.type, data.data);
+  socket.to("user").emit(data.type, data.data);
 }
 
 function sendDataToPatient(data, patientId) {
@@ -107,7 +107,10 @@ app.post("/broadcast/scheduleUpdate", async (req, res) => {
     return;
   }
 
-  sendDataToUsers({ type: "scheduleUpdate", data: parsed });
+  sendDataToUsers({
+    type: "scheduleUpdate",
+    data: { ...parsed, challange: undefined },
+  });
   res.status(200).json({ status: "ok", message: "sent" });
 });
 
@@ -131,8 +134,14 @@ app.post("/broadcast/checkInUpdate", async (req, res) => {
     return;
   }
 
-  sendDataToUsers({ type: "checkInUpdate", data: parsed });
-  sendDataToPatient({ type: "checkInUpdate", data: parsed }, parsed.patientId);
+  sendDataToUsers({
+    type: "checkInUpdate",
+    data: { ...parsed, challange: undefined },
+  });
+  sendDataToPatient(
+    { type: "checkInUpdate", data: { ...parsed, challange: undefined } },
+    parsed.patientId,
+  );
 
   res.status(200).json({ status: "ok", message: "sent" });
 });
