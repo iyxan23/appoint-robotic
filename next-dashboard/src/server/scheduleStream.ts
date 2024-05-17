@@ -13,7 +13,7 @@ export class ScheduleStream {
     },
     patientId: number,
   ) {
-    return fetch(`${this.host}/broadcast/checkInUpdate`, {
+    return fetch(`http://${this.host}/broadcast/checkInUpdate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -30,7 +30,9 @@ export class ScheduleStream {
     month: number;
     day: number;
   }) {
-    return fetch(`${this.host}/broadcast/scheduleUpdate`, {
+    console.log("sending schedule update");
+    console.log(`${this.host}/broadcast/scheduleUpdate`);
+    return fetch(`http://${this.host}/broadcast/scheduleUpdate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
