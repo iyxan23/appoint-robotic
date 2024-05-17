@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { env } from "~/env";
 
 const STALE_AFTER_MS = 1000;
 
@@ -10,12 +9,8 @@ export class TimeFaker {
   private lastFetched?: number;
 
   async _fetchTime(): Promise<Date> {
-    if (!env.TIME_FAKER_USE) {
-      return new Date();
-    }
-
     this.lastFetched = performance.now();
-    return fetch(`${this.host}/time`)
+    return fetch(`http://${this.host}/api/time`)
       .then((res) => res.json())
       .then((r) => z.coerce.date().parseAsync(r.date));
   }

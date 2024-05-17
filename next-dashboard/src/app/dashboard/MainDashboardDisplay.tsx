@@ -1,8 +1,8 @@
 "use client";
 
-import { getHours, getMinutes } from "date-fns";
+import { format, getHours, getMinutes } from "date-fns";
 import { Armchair, HeartHandshake, UserIcon } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { z } from "zod";
 import { Button } from "~/components/ui/button";
 import {
@@ -16,10 +16,19 @@ import { WORK_START_HOUR } from "~/lib/constants";
 import useStubbedNow from "~/lib/hooks/useStubbedNow";
 import type { schemaSchedule, schemaTime } from "~/lib/schemas/schedule";
 import { dateToScheduleDate } from "~/lib/utils";
+import { TimeFaker } from "~/lib/timeFaker";
 import { api } from "~/trpc/react";
 
-export default function MainDashboardDisplay() {
-  const { now } = useStubbedNow();
+export default function MainDashboardDisplay({
+  timeFakerHost,
+}: {
+  timeFakerHost?: string;
+}) {
+  const [timeFaker] = useState(() =>
+    timeFakerHost ? new TimeFaker(timeFakerHost) : null,
+  );
+  const { now } = useStubbedNow(timeFaker);
+
   const today = dateToScheduleDate(now);
   const { data } = api.schedule.getSchedule.useQuery(today);
 
@@ -38,12 +47,12 @@ export default function MainDashboardDisplay() {
 
       return found
         ? {
-            status: "loaded" as const,
-            data: found[0],
-            index: found[1],
-            previous: dataFilled[found[1] - 1],
-            next: dataFilled[found[1] + 1],
-          }
+          status: "loaded" as const,
+          data: found[0],
+          index: found[1],
+          previous: dataFilled[found[1] - 1],
+          next: dataFilled[found[1] + 1],
+        }
         : { status: "empty" as const };
     }
 
@@ -52,6 +61,11 @@ export default function MainDashboardDisplay() {
 
   return (
     <div className="flex flex-col gap-4">
+      <p>Tanggal {format(now, "yyyy MMM dd")}</p>
+      <p>
+        Sekarang jam {getHours(now).toString().padStart(2, "0")}:
+        {getMinutes(now).toString().padStart(2, "0")}
+      </p>
       <Card>
         <CardHeader>Sekarang</CardHeader>
         <CardContent>
@@ -137,7 +151,7 @@ export default function MainDashboardDisplay() {
         </CardFooter>
       </Card>
 
-      {work.data != null && work.data.type === "appointment" && (
+      {work.data != null && work.data.type === "appointment" ? (
         <Card>
           <CardHeader className="font-semibold">
             Panel {work.data.title}
@@ -150,14 +164,13 @@ export default function MainDashboardDisplay() {
             <div className="flex flex-row gap-2">
               Status:
               <span
-                className={`font-semibold ${
-                  {
+                className={`font-semibold ${{
                     appointed: "text-red-600",
                     "checked-in": "text-yellow-600",
                     "in-progress": "text-lime-600",
                     finished: "text-green-600",
                   }[work.data.status]
-                }`}
+                  }`}
               >
                 {
                   {
@@ -170,11 +183,17 @@ export default function MainDashboardDisplay() {
               </span>
             </div>
             <div className="flex flex-row justify-end gap-4">
-              <Button disabled={work.data.status !== "checked-in"}>Mulai</Button>
-              <Button disabled={work.data.status !== "in-progress"}>Selesai</Button>
+              <Button disabled={work.data.status !== "checked-in"}>
+                Mulai
+              </Button>
+              <Button disabled={work.data.status !== "in-progress"}>
+                Selesai
+              </Button>
             </div>
           </CardContent>
         </Card>
+      ) : (
+        <></>
       )}
     </div>
   );
@@ -185,23 +204,23 @@ function findScheduleAssociatedToTime(
   schedules: (
     | z.infer<typeof schemaSchedule>
     | {
+      type: "empty";
+      start: z.infer<typeof schemaTime>;
+      end: z.infer<typeof schemaTime>;
+    }
+  )[],
+):
+  | [
+    (
+      | z.infer<typeof schemaSchedule>
+      | {
         type: "empty";
         start: z.infer<typeof schemaTime>;
         end: z.infer<typeof schemaTime>;
       }
-  )[],
-):
-  | [
-      (
-        | z.infer<typeof schemaSchedule>
-        | {
-            type: "empty";
-            start: z.infer<typeof schemaTime>;
-            end: z.infer<typeof schemaTime>;
-          }
-      ),
-      number,
-    ]
+    ),
+    number,
+  ]
   | null {
   const time = hour * 1000 + minute;
   const foundIndex = schedules.findIndex(
@@ -218,18 +237,18 @@ function findScheduleAssociatedToTime(
 function fillEmptyTimes(schedules: z.infer<typeof schemaSchedule>[]): (
   | z.infer<typeof schemaSchedule>
   | {
-      type: "empty";
-      start: z.infer<typeof schemaTime>;
-      end: z.infer<typeof schemaTime>;
-    }
+    type: "empty";
+    start: z.infer<typeof schemaTime>;
+    end: z.infer<typeof schemaTime>;
+  }
 )[] {
   const result: (
     | z.infer<typeof schemaSchedule>
     | {
-        type: "empty";
-        start: z.infer<typeof schemaTime>;
-        end: z.infer<typeof schemaTime>;
-      }
+      type: "empty";
+      start: z.infer<typeof schemaTime>;
+      end: z.infer<typeof schemaTime>;
+    }
   )[] = [];
   let lastHour = WORK_START_HOUR;
 

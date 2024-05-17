@@ -1,3 +1,4 @@
+import { env } from "~/env";
 import MainDashboardDisplay from "./MainDashboardDisplay";
 import WelcomeBack from "./WelcomeBack";
 
@@ -9,7 +10,7 @@ export default function DashboardPage() {
           <WelcomeBack />
         </h1>
       </div>
-      <MainDashboardDisplay />
+      <MainDashboardDisplay timeFakerHost={env.TIME_FAKER_USE ? env.TIME_FAKER_HOST : undefined} />
     </main>
   );
 }
