@@ -18,7 +18,7 @@ export const env = createEnv({
     NFC_READER_SECRET: z.string(),
 
     TIME_FAKER_HOST: z.string(),
-    TIME_FAKER_USE: z.boolean()
+    TIME_FAKER_USE: z.coerce.boolean()
   },
 
   /**
