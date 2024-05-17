@@ -8,6 +8,8 @@
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/flutter/flutter-original.svg" width=50 />
 </p>
 
+<img src=".github/appoint-poster.png" width=250 />
+
 Appoint is a system of IoT devices to make it easy to arrange medical appointments.
 
 ## Batteries Included
