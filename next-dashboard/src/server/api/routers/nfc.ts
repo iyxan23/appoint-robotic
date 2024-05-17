@@ -57,9 +57,18 @@ export const nfcRouter = createTRPCRouter({
         .set({ status: "checked-in" })
         .where(eq(schedule.id, theSchedule.id));
 
-      await ctx.notifier.sendCheckInUpdate({
-        id: theSchedule.id,
-        status: "checked-in",
-      });
+      if (!theSchedule.patientId) {
+        console.error("no patientId found for schedule ", theSchedule);
+        console.error("skipping /nfc/doCheckIn");
+        return;
+      }
+
+      await ctx.notifier.sendCheckInUpdate(
+        {
+          id: theSchedule.id,
+          status: "checked-in",
+        },
+        theSchedule.patientId,
+      );
     }),
 });
