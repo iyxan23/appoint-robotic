@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import { schemaCheckInUpdate, schemaScheduleUpdate } from "./schemas.js";
 import { createHash } from "node:crypto";
 import { config } from "dotenv";
+import cors from "cors";
 
 config();
 
@@ -20,6 +21,7 @@ if (!process.env["SECRET"]) {
 
 const SECRET = process.env["SECRET"];
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
