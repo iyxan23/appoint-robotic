@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { Toaster } from "~/components/ui/sonner";
+import SocketIoProvider from "~/lib/socket/SocketIoProvider";
+import { env } from "~/env";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,7 +26,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className}`}>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <SocketIoProvider url={env.SCHEDULE_STREAM_HOST}>{children}</SocketIoProvider>
+        </TRPCReactProvider>
         <Toaster />
       </body>
     </html>

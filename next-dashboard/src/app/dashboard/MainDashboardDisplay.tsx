@@ -18,6 +18,7 @@ import type { schemaSchedule, schemaTime } from "~/lib/schemas/schedule";
 import { dateToScheduleDate } from "~/lib/utils";
 import { TimeFaker } from "~/lib/timeFaker";
 import { api } from "~/trpc/react";
+import useSocket from "~/lib/socket/useSocket";
 
 export default function MainDashboardDisplay({
   timeFakerHost,
@@ -28,6 +29,7 @@ export default function MainDashboardDisplay({
     timeFakerHost ? new TimeFaker(timeFakerHost) : null,
   );
   const { now } = useStubbedNow(timeFaker);
+  const socket = useSocket();
 
   const today = dateToScheduleDate(now);
   const { data } = api.schedule.getSchedule.useQuery(today);
