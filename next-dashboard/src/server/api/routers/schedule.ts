@@ -68,10 +68,16 @@ export const scheduleRouter = createTRPCRouter({
 
       const dbSchedules = await ctx.db.query.schedule.findMany({
         where: wher,
+        with: {
+          patient: true,
+        },
       });
 
-      const schedules = dbSchedules.map((ds) =>
-        convertDbScheduleToSchedule(ds),
+      const schedules = dbSchedules.map(({ patient, ...ds }) =>
+        convertDbScheduleToSchedule(
+          ds,
+          patient ? { id: patient.id, name: patient.username } : undefined,
+        ),
       );
 
       return nestSchedules(schedules);
@@ -240,7 +246,10 @@ export const scheduleRouter = createTRPCRouter({
         });
       }
 
-      if (updatedSchedule.status !== "appointed" && updatedSchedule.status !== null) {
+      if (
+        updatedSchedule.status !== "appointed" &&
+        updatedSchedule.status !== null
+      ) {
         await ctx.notifier.sendCheckInUpdate({
           id: updatedSchedule.id,
           status: updatedSchedule.status,
