@@ -12,7 +12,7 @@ config();
 const app = express();
 const server = createServer(app);
 
-const io = new Server(server);
+const io = new Server(server, { cors: { origin: "*" } });
 const port = process.env["PORT"] || 3333;
 
 if (!process.env["SECRET"]) {
@@ -29,23 +29,12 @@ app.get("/", (req, res) => {
   res.end();
 });
 
-const listeners = {};
-
 function sendDataToUsers(data) {
-  for (const id in listeners) {
-    if (listeners[id].patientId) {
-      continue;
-    }
-    listeners[id].emit(data);
-  }
+  socket.to('user').emit(data.type, data.data);
 }
 
 function sendDataToPatient(data, patientId) {
-  for (const id in listeners) {
-    if (listeners[id].patientId === patientId) {
-      listeners[id].emit(data);
-    }
-  }
+  socket.to(`patient-${patientId}`).emit(data.type, data.data);
 }
 
 function hash(input) {
@@ -56,7 +45,7 @@ async function verifyToken(token) {
   const payload = { token, nonce: nanoid() };
 
   return fetch(
-    `${process.env["BACKEND_HOST"]}/api/open/scheduleStream/verifyToken`,
+    `${process.env["BACKEND_HOST"]}/api/scheduleStream/verifyToken`,
     {
       method: "POST",
       headers: {
@@ -75,40 +64,25 @@ io.on("connection", (socket) => {
   console.log(`Client connected: ${id}`);
 
   socket.on("login", (token) => {
+    if (typeof token !== "string") return;
     console.log(`Login: ${token}`);
     verifyToken(token).then((data) => {
       if (data.valid) {
         console.log(`login is valid: ${JSON.stringify(data)}`);
 
         if (data.kind.type === "user") {
-          listeners[id] = {
-            emit: async (data) => {
-              console.log(`Emitting data to user: ${data}`);
-              socket.emit("data", data);
-            },
-          };
+          socket.join("user");
         } else {
-          listeners[id] = {
-            patientId: data.kind.id,
-            emit: async (data) => {
-              console.log(
-                `Emitting data to patient with id ${data.kind.id}: ${data}`,
-              );
-              socket.emit("data", data);
-            },
-          };
+          socket.join(`patient-${data.kind.id}`);
         }
       } else {
+        console.log("invalid");
         socket.disconnect(true);
       }
     });
   });
 
   socket.on("disconnect", () => {
-    if (listeners[id]) {
-      delete listeners[id];
-    }
-
     console.log(`Client disconnected: ${id}`);
   });
 });
