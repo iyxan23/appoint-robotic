@@ -178,7 +178,7 @@ export const patientRouter = createTRPCRouter({
         .values({
           patientId: ctx.session.id,
           scheduleId: input.scheduleId,
-          id: new Crypto().randomUUID(),
+          id: crypto.randomUUID(),
         }).returning();
 
       // biome-ignore lint/style/noNonNullAssertion: shouldn't be null, because we had just inserted it
