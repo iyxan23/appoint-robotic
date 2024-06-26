@@ -88,6 +88,7 @@ io.on("connection", (socket) => {
 });
 
 app.post("/broadcast/scheduleUpdate", async (req, res) => {
+  console.log(`scheduleUpdate triggered`);
   let parsed;
   try {
     parsed = await schemaScheduleUpdate.parseAsync(req.body);
@@ -107,6 +108,8 @@ app.post("/broadcast/scheduleUpdate", async (req, res) => {
     return;
   }
 
+  console.log(parsed);
+
   sendDataToUsers({
     type: "scheduleUpdate",
     data: { ...parsed, challange: undefined },
@@ -115,6 +118,7 @@ app.post("/broadcast/scheduleUpdate", async (req, res) => {
 });
 
 app.post("/broadcast/checkInUpdate", async (req, res) => {
+  console.log(`checkInUpdate triggered`);
   let parsed;
   try {
     parsed = await schemaCheckInUpdate.parseAsync(req.body);
@@ -128,6 +132,8 @@ app.post("/broadcast/checkInUpdate", async (req, res) => {
   const reqBody = JSON.stringify({ ...parsed, challange: undefined });
 
   const challangePassed = challangeResp === hash(reqBody + SECRET);
+
+  console.log(parsed);
 
   if (!challangePassed) {
     res.status(400).json({ status: "err", message: "Challange failed" });

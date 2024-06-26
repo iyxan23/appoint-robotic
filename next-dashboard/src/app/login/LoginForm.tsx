@@ -46,6 +46,7 @@ export default function LoginForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(async (data) => {
+          console.log(`login triggered ${data.username}`);
           mutate({ username: data.username, password: data.password });
         })}
         className="flex flex-col gap-4"

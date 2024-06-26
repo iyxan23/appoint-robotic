@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:appoint/models/appoint_req.dart';
+import 'package:appoint/models/empty_schedules.dart';
+import 'package:appoint/models/schedule.dart';
+import 'package:appoint/models/session.dart';
 import 'package:http/http.dart' as http;
-
 import 'cache.dart';
+import 'session_manager.dart';
 
 sealed class RemoteResponse<T> {}
 
@@ -23,37 +27,26 @@ class RemoteService {
   late final http.Client client = http.Client();
   final String urlBase;
   final Cache cache = Cache();
-  final SessionManager sessionManager = new SessionManager();
+  final SessionManager sessionManager = SessionManager();
 
   static const _emptySchedulesKey = "emptySchedules";
 
-  Future<RemoteResponse<List<Product>>> getProducts() async {
-    var resp = await cache.getOrSetAsync(_productsKey,
-        () => getWithSession("/shop/list-product?shopId=$shopId"));
+  Future<RemoteResponse<List<Schedule>>> listAppointments() async {
+    var resp = await cache.getOrSetAsync(
+        _emptySchedulesKey, () => getWithSession("/patient/appointments"));
 
     if (resp is RemoteSuccess) {
-      return RemoteSuccess(productFromJson((resp as RemoteSuccess).data));
+      return RemoteSuccess(scheduleListFromJson((resp as RemoteSuccess).data));
     } else {
-      return (resp as RemoteError) as RemoteResponse<List<Product>>;
+      return (resp as RemoteError) as RemoteResponse<List<Schedule>>;
     }
   }
-  void invalidateEmptySchedules() {
-    cache.invalidate(_emptySchedulesKey);
-  }
 
-  /// Takes a list of int (productIds) that refers to quantity.
-  Future<RemoteResponse<Appointment>> createAppointment(
-      List<Quantity<int>> productIds) async {
-    var uri = Uri.parse('$urlBase/transaction/create');
-    var response = await client.post(
+  Future<RemoteResponse<String>> checkIn(int scheduleId) async {
+    var uri = Uri.parse('$urlBase/patient/checkin?scheduleId=$scheduleId');
+    var response = await client.get(
       uri,
-      headers: {"Content-Type": "application/json", ..._getHeaders()},
-      body: json.encode({
-        "shopId": shopId,
-        "items": productIds
-            .map((q) => {"productId": q.product, "quantity": q.quantity})
-            .toList()
-      }),
+      headers: _getHeaders(),
     );
 
     print(response.request?.contentLength);
@@ -61,21 +54,36 @@ class RemoteService {
     print(response.headers.toString());
 
     if (response.statusCode == 200) {
-      return RemoteSuccess(transactionFromJson(response.body));
+      var parsed = json.decode(response.body);
+      return RemoteSuccess(parsed["id"] as String);
     } else {
       return RemoteError(response.body);
     }
   }
 
-  Future<RemoteResponse<Session>> register(String username, String register) async {
-    var uri = Uri.parse('$urlBase/register');
+  Future<RemoteResponse<List<EmptySchedules>>> getEmptySchedules() async {
+    var resp = await cache.getOrSetAsync(_emptySchedulesKey,
+        () => getWithSession("/schedule/listEmptySchedules"));
+
+    if (resp is RemoteSuccess) {
+      return RemoteSuccess(
+          emptySchedulesFromJson((resp as RemoteSuccess).data));
+    } else {
+      return (resp as RemoteError) as RemoteResponse<List<EmptySchedules>>;
+    }
+  }
+
+  void invalidateEmptySchedules() {
+    cache.invalidate(_emptySchedulesKey);
+  }
+
+  Future<RemoteResponse<Schedule>> createAppointment(
+      AppointRequest data) async {
+    var uri = Uri.parse('$urlBase/schedule/appoint');
     var response = await client.post(
       uri,
       headers: {"Content-Type": "application/json", ..._getHeaders()},
-      body: json.encode({
-        "username": username,
-        "password": password
-      }),
+      body: appointRequestToJson(data),
     );
 
     print(response.request?.contentLength);
@@ -83,19 +91,40 @@ class RemoteService {
     print(response.headers.toString());
 
     if (response.statusCode == 200) {
-      const parsed = json.decode(response.body);
+      return RemoteSuccess(scheduleFromJson(response.body));
+    } else {
+      return RemoteError(response.body);
+    }
+  }
+
+  Future<RemoteResponse<Session>> register(
+      String username, String password) async {
+    var uri = Uri.parse('$urlBase/register');
+    var response = await client.post(
+      uri,
+      headers: {"Content-Type": "application/json", ..._getHeaders()},
+      body: json.encode({"username": username, "password": password}),
+    );
+
+    print(response.request?.contentLength);
+    print(response.body);
+    print(response.headers.toString());
+
+    if (response.statusCode == 200) {
+      updateCookie(response);
+      var parsed = json.decode(response.body);
       if (parsed["success"]) {
-        sessionManager.setSession(parsed["data"]["session"]);
-        return RemoteSuccess();
+        return RemoteSuccess(sessionFromJson(parsed["session"]));
       } else {
-        return RemoteError("Failed to register");
+        return RemoteError(parsed["error"]);
       }
     } else {
       return RemoteError(response.body);
     }
   }
 
-  Future<RemoteResponse<void>> login(String username, String password) async {
+  Future<RemoteResponse<Session>> login(
+      String username, String password) async {
     var uri = Uri.parse('$urlBase/login');
     var response = await client.post(
       uri,
@@ -110,7 +139,12 @@ class RemoteService {
 
     if (response.statusCode == 200) {
       updateCookie(response);
-      return RemoteSuccess(null);
+      var parsed = json.decode(response.body);
+      if (parsed["success"]) {
+        return RemoteSuccess(sessionFromJson(parsed["session"]));
+      } else {
+        return RemoteError(parsed["error"]);
+      }
     } else {
       return RemoteError(response.body);
     }
@@ -132,11 +166,12 @@ class RemoteService {
     String? rawCookie = response.headers['set-cookie'];
     if (rawCookie != null) {
       int index = rawCookie.indexOf(';');
-      sessionManager.setSession((index == -1) ? rawCookie : rawCookie.substring(0, index));
+      this.sessionManager.setSession(
+          (index == -1) ? rawCookie : rawCookie.substring(0, index));
     }
   }
 
-  String _getHeaders() {
+  Map<String, String> _getHeaders() {
     return {"Cookie": sessionManager.getSession() ?? ""};
   }
 }

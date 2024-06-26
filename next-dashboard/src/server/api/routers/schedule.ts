@@ -253,7 +253,7 @@ export const scheduleRouter = createTRPCRouter({
         await ctx.notifier.sendCheckInUpdate({
           id: updatedSchedule.id,
           status: updatedSchedule.status,
-        });
+        }, updatedSchedule.patientId!);
       }
 
       return convertDbScheduleToSchedule(updatedSchedule);

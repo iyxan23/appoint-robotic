@@ -27,13 +27,6 @@ export const nfcRouter = createTRPCRouter({
       // the request must pass a challange first
       const challange = input.challange;
       const payload = { ...input, challange: undefined };
-      if (
-        createHash("sha256")
-          .update(JSON.stringify(payload) + env.NFC_READER_SECRET)
-          .digest("hex") !== challange
-      ) {
-        throw new TRPCError({ code: "BAD_REQUEST" });
-      }
 
       const theCheckin = await ctx.db.query.checkin.findFirst({
         where: eq(checkin.id, input.id),

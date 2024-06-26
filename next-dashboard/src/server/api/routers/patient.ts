@@ -163,15 +163,15 @@ export const patientRouter = createTRPCRouter({
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      const now = new Date();
-      const nowMins = now.getHours() * 60 + now.getMinutes();
-
-      const scheduleMins = theSchedule.startHour * 60 + theSchedule.startMinute;
-      const diff = nowMins - scheduleMins;
-
-      if (-diff > 15 || diff > 0) {
-        throw new TRPCError({ code: "BAD_REQUEST" });
-      }
+      // const now = new Date();
+      // const nowMins = now.getHours() * 60 + now.getMinutes();
+      //
+      // const scheduleMins = theSchedule.startHour * 60 + theSchedule.startMinute;
+      // const diff = nowMins - scheduleMins;
+      //
+      // if (-diff > 15 || diff > 0) {
+      //   throw new TRPCError({ code: "BAD_REQUEST" });
+      // }
 
       const newCheckIn = await ctx.db
         .insert(checkin)
@@ -179,7 +179,54 @@ export const patientRouter = createTRPCRouter({
           patientId: ctx.session.id,
           scheduleId: input.scheduleId,
           id: crypto.randomUUID(),
-        }).returning();
+        })
+        .returning();
+
+      // biome-ignore lint/style/noNonNullAssertion: shouldn't be null, because we had just inserted it
+      return { id: newCheckIn[0]!.id };
+    }),
+
+  getaCheckInID: publicProcedure
+    .meta({
+      openapi: {
+        method: "GET",
+        path: "/patient/acheckin",
+        tags: [PATIENT_TAG],
+      },
+    })
+    .input(z.object({ scheduleId: z.number(), patientId: z.number() }))
+    .output(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      // check if schedule is at least 15 mins before new Date();
+      const theSchedule = await ctx.db.query.schedule.findFirst({
+        where: and(
+          eq(schedule.id, input.scheduleId),
+          eq(schedule.patientId, input.patientId),
+        ),
+      });
+
+      if (!theSchedule) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      // const now = new Date();
+      // const nowMins = now.getHours() * 60 + now.getMinutes();
+      //
+      // const scheduleMins = theSchedule.startHour * 60 + theSchedule.startMinute;
+      // const diff = nowMins - scheduleMins;
+      //
+      // if (-diff > 15 || diff > 0) {
+      //   throw new TRPCError({ code: "BAD_REQUEST" });
+      // }
+
+      const newCheckIn = await ctx.db
+        .insert(checkin)
+        .values({
+          patientId: input.patientId,
+          scheduleId: input.scheduleId,
+          id: crypto.randomUUID(),
+        })
+        .returning();
 
       // biome-ignore lint/style/noNonNullAssertion: shouldn't be null, because we had just inserted it
       return { id: newCheckIn[0]!.id };

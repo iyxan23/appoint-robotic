@@ -19,11 +19,14 @@ import { dateToScheduleDate } from "~/lib/utils";
 import { TimeFaker } from "~/lib/timeFaker";
 import { api } from "~/trpc/react";
 import useSocket from "~/lib/socket/useSocket";
+import CheckInPanel from "./CheckInPanel";
 
 export default function MainDashboardDisplay({
   timeFakerHost,
+  nfcReaderSecret,
 }: {
   timeFakerHost?: string;
+  nfcReaderSecret: string;
 }) {
   const [timeFaker] = useState(() =>
     timeFakerHost ? new TimeFaker(timeFakerHost) : null,
@@ -34,6 +37,11 @@ export default function MainDashboardDisplay({
   const today = dateToScheduleDate(now);
   const utils = api.useUtils();
   const { data } = api.schedule.getSchedule.useQuery(today);
+  const { mutate } = api.schedule.updateScheduleStatus.useMutation({
+    onSuccess: () => {
+      utils.schedule.getSchedule.invalidate(today);
+    },
+  });
 
   const dataFilled = useMemo(
     () => (data ? fillEmptyTimes(data) : undefined),
@@ -73,12 +81,12 @@ export default function MainDashboardDisplay({
 
       return found
         ? {
-          status: "loaded" as const,
-          data: found[0],
-          index: found[1],
-          previous: dataFilled[found[1] - 1],
-          next: dataFilled[found[1] + 1],
-        }
+            status: "loaded" as const,
+            data: found[0],
+            index: found[1],
+            previous: dataFilled[found[1] - 1],
+            next: dataFilled[found[1] + 1],
+          }
         : { status: "empty" as const };
     }
 
@@ -136,13 +144,13 @@ export default function MainDashboardDisplay({
                   {work.data.end.minute.toString().padStart(2, "0")}
                 </p>
               ) : (
-                <Skeleton className="h-5 w-16 ml-auto" />
+                <Skeleton className="ml-auto h-5 w-16" />
               )}
             </div>
           )}
         </CardContent>
         <hr />
-        <CardFooter className="flex flex-row justify-between py-4 bg-muted rounded-b-lg">
+        <CardFooter className="flex flex-row justify-between rounded-b-lg bg-muted py-4">
           {work.status === "loaded" ? (
             <>
               <div className="text-sm text-muted-foreground">
@@ -190,13 +198,14 @@ export default function MainDashboardDisplay({
             <div className="flex flex-row gap-2">
               Status:
               <span
-                className={`font-semibold ${{
+                className={`font-semibold ${
+                  {
                     appointed: "text-red-600",
                     "checked-in": "text-yellow-600",
                     "in-progress": "text-lime-600",
                     finished: "text-green-600",
                   }[work.data.status]
-                  }`}
+                }`}
               >
                 {
                   {
@@ -209,15 +218,36 @@ export default function MainDashboardDisplay({
               </span>
             </div>
             <div className="flex flex-row justify-end gap-4">
-              <Button disabled={work.data.status !== "checked-in"}>
+              <Button
+                onClick={() => {
+                  if (work.data.type !== "appointment") return;
+                  mutate({ id: work.data.id, status: "in-progress" });
+                }}
+                disabled={work.data.status !== "checked-in"}
+              >
                 Mulai
               </Button>
-              <Button disabled={work.data.status !== "in-progress"}>
+              <Button
+                onClick={() => {
+                  if (work.data.type !== "appointment") return;
+                  mutate({ id: work.data.id, status: "finished" });
+                }}
+                disabled={work.data.status !== "in-progress"}
+              >
                 Selesai
               </Button>
             </div>
           </CardContent>
         </Card>
+      ) : (
+        <></>
+      )}
+      {work.data != null && work.data.type === "appointment" ? (
+        <CheckInPanel
+          nfcReaderSecret={nfcReaderSecret}
+          scheduleId={work.data.id}
+          patientId={work.data.patient.id}
+        />
       ) : (
         <></>
       )}
@@ -230,23 +260,23 @@ function findScheduleAssociatedToTime(
   schedules: (
     | z.infer<typeof schemaSchedule>
     | {
-      type: "empty";
-      start: z.infer<typeof schemaTime>;
-      end: z.infer<typeof schemaTime>;
-    }
-  )[],
-):
-  | [
-    (
-      | z.infer<typeof schemaSchedule>
-      | {
         type: "empty";
         start: z.infer<typeof schemaTime>;
         end: z.infer<typeof schemaTime>;
       }
-    ),
-    number,
-  ]
+  )[],
+):
+  | [
+      (
+        | z.infer<typeof schemaSchedule>
+        | {
+            type: "empty";
+            start: z.infer<typeof schemaTime>;
+            end: z.infer<typeof schemaTime>;
+          }
+      ),
+      number,
+    ]
   | null {
   const time = hour * 1000 + minute;
   const foundIndex = schedules.findIndex(
@@ -263,18 +293,18 @@ function findScheduleAssociatedToTime(
 function fillEmptyTimes(schedules: z.infer<typeof schemaSchedule>[]): (
   | z.infer<typeof schemaSchedule>
   | {
-    type: "empty";
-    start: z.infer<typeof schemaTime>;
-    end: z.infer<typeof schemaTime>;
-  }
-)[] {
-  const result: (
-    | z.infer<typeof schemaSchedule>
-    | {
       type: "empty";
       start: z.infer<typeof schemaTime>;
       end: z.infer<typeof schemaTime>;
     }
+)[] {
+  const result: (
+    | z.infer<typeof schemaSchedule>
+    | {
+        type: "empty";
+        start: z.infer<typeof schemaTime>;
+        end: z.infer<typeof schemaTime>;
+      }
   )[] = [];
   let lastHour = WORK_START_HOUR;
 

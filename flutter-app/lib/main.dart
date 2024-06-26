@@ -1,4 +1,5 @@
 import 'package:appoint/pages/check_in.dart';
+import 'package:appoint/pages/homepage.dart';
 import 'package:appoint/pages/login.dart';
 import 'package:flutter/material.dart';
 

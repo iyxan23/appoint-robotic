@@ -25,5 +25,5 @@ class Session {
         "id": id,
         "username": username,
         "kind": kind,
-  }
+  };
 }
